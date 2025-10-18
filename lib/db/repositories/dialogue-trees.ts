@@ -1,0 +1,57 @@
+import { query } from "../client"
+
+interface DialogueTree {
+  id: string
+  npcId?: string
+  questId?: string
+  treeData: any
+  createdAt: Date
+  updatedAt: Date
+}
+
+export async function createDialogueTree(
+  data: Omit<DialogueTree, "id" | "createdAt" | "updatedAt">,
+): Promise<DialogueTree> {
+  const [tree] = await query<DialogueTree>(
+    `INSERT INTO dialogue_trees (npc_id, quest_id, tree_data)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [data.npcId || null, data.questId || null, JSON.stringify(data.treeData)],
+  )
+  return tree
+}
+
+export async function getDialogueTree(id: string): Promise<DialogueTree | null> {
+  const [tree] = await query<DialogueTree>("SELECT * FROM dialogue_trees WHERE id = $1", [id])
+  return tree || null
+}
+
+export async function getDialogueTreesByNPC(npcId: string): Promise<DialogueTree[]> {
+  return query<DialogueTree>("SELECT * FROM dialogue_trees WHERE npc_id = $1", [npcId])
+}
+
+export async function getDialogueTreesByQuest(questId: string): Promise<DialogueTree[]> {
+  return query<DialogueTree>("SELECT * FROM dialogue_trees WHERE quest_id = $1", [questId])
+}
+
+export async function updateDialogueTree(id: string, data: Partial<DialogueTree>): Promise<DialogueTree> {
+  const updates: string[] = []
+  const values: any[] = []
+  let paramIndex = 1
+
+  if (data.treeData !== undefined) {
+    updates.push(`tree_data = $${paramIndex++}`)
+    values.push(JSON.stringify(data.treeData))
+  }
+
+  values.push(id)
+  const [tree] = await query<DialogueTree>(
+    `UPDATE dialogue_trees SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+    values,
+  )
+  return tree
+}
+
+export async function deleteDialogueTree(id: string): Promise<void> {
+  await query("DELETE FROM dialogue_trees WHERE id = $1", [id])
+}
