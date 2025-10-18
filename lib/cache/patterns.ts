@@ -69,14 +69,27 @@ export async function invalidateZone(zoneId: string): Promise<void> {
 
 // Warm cache with frequently accessed data
 export async function warmCache(entityType: string, entities: any[]): Promise<void> {
-  const entries: [string, any, number][] = entities.map((entity) => [
+  // Validate entities have defined IDs before building cache entries
+  const validEntities = entities.filter((entity) => {
+    if (!entity || entity.id === undefined || entity.id === null) {
+      return false
+    }
+    return true
+  })
+
+  const skippedCount = entities.length - validEntities.length
+  if (skippedCount > 0) {
+    console.warn(`[v0] Skipped ${skippedCount} ${entityType} entities with missing IDs during cache warming`)
+  }
+
+  const entries: [string, any, number][] = validEntities.map((entity) => [
     `${entityType}:${entity.id}`,
     entity,
     CacheTTL.ENTITY,
   ])
 
   await cache.mset(entries)
-  console.log(`[v0] Warmed cache with ${entities.length} ${entityType} entities`)
+  console.log(`[v0] Warmed cache with ${validEntities.length} ${entityType} entities`)
 }
 
 // Cache AI generation results

@@ -12,13 +12,16 @@ interface DialogueTree {
 export async function createDialogueTree(
   data: Omit<DialogueTree, "id" | "createdAt" | "updatedAt">,
 ): Promise<DialogueTree> {
-  const [tree] = await query<DialogueTree>(
+  const result = await query<DialogueTree>(
     `INSERT INTO dialogue_trees (npc_id, quest_id, tree_data)
      VALUES ($1, $2, $3)
      RETURNING *`,
     [data.npcId || null, data.questId || null, JSON.stringify(data.treeData)],
   )
-  return tree
+  if (!result || result.length === 0) {
+    throw new Error("Failed to create dialogue tree: no rows returned")
+  }
+  return result[0]
 }
 
 export async function getDialogueTree(id: string): Promise<DialogueTree | null> {
@@ -42,6 +45,15 @@ export async function updateDialogueTree(id: string, data: Partial<DialogueTree>
   if (data.treeData !== undefined) {
     updates.push(`tree_data = $${paramIndex++}`)
     values.push(JSON.stringify(data.treeData))
+  }
+
+  if (updates.length === 0) {
+    // No updates provided, return existing record
+    const existing = await getDialogueTree(id)
+    if (!existing) {
+      throw new Error(`Dialogue tree with id ${id} not found`)
+    }
+    return existing
   }
 
   values.push(id)

@@ -41,6 +41,14 @@ export async function createContentPackBundle(pack: ContentPack): Promise<string
       assets: {},
     }
 
+    // Validate pack.id matches alphanumeric/dash/underscore pattern before use
+    const allowedPattern = /^[A-Za-z0-9_-]+$/
+    if (!pack.id || !allowedPattern.test(pack.id)) {
+      throw new Error(
+        `Invalid pack.id: "${pack.id}". Only alphanumeric characters, underscores, and hyphens are allowed.`,
+      )
+    }
+
     // Convert to JSON
     const manifestJson = JSON.stringify(manifest, null, 2)
 

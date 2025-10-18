@@ -105,6 +105,15 @@ export async function updateNPC(id: string, data: Partial<NPC>): Promise<NPC> {
     values.push(JSON.stringify(data.assetUrls))
   }
 
+  if (updates.length === 0) {
+    // No updates provided, return existing record
+    const existing = await getNPC(id)
+    if (!existing) {
+      throw new Error(`NPC with id ${id} not found`)
+    }
+    return existing
+  }
+
   values.push(id)
   const [npc] = await query<NPC>(
     `UPDATE npcs SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,

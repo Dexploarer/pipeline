@@ -46,10 +46,10 @@ export function VersionControl() {
   ])
 
   const handleCommit = () => {
-    const timestamp = Date.now()
+    const buildNumber = versions.length + 1
     const newVersion: Version = {
       id: uuidv4(),
-      version: `2.${versions.length + 1}.0-${timestamp}`,
+      version: `2.${buildNumber}.0`,
       author: "Game Designer",
       timestamp: "Just now",
       changes: "Manual commit of current changes",

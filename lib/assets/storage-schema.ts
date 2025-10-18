@@ -39,7 +39,7 @@ export const AssetPaths = {
 
   // Content pack bundles
   CONTENT_PACK: (packId: string) => `content-packs/${sanitizeId(packId, "packId")}/bundle.zip`,
-  PACK_MANIFEST: (packId: string) => `content-packs/${packId}/manifest.json`,
+  PACK_MANIFEST: (packId: string) => `content-packs/${sanitizeId(packId, "packId")}/manifest.json`,
   PACK_PREVIEW: (packId: string) => `content-packs/${sanitizeId(packId, "packId")}/preview.jpg`,
 }
 

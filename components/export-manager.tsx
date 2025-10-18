@@ -28,19 +28,23 @@ export function ExportManager() {
 
   const handleExport = async () => {
     try {
-      // Gather real data from stores
-      const data = {
-        npcs: includeNPCs ? npcs : undefined,
-        quests: includeQuests ? quests : undefined,
-        lore: includeLore ? loreEntries : undefined,
-        dialogues: includeDialogues ? dialogueTrees.flatMap(tree => tree.nodes) : undefined,
-      }
-
       // Map format string to ExportFormat enum
-      const exportFormat = format === "json" ? ExportFormat.JSON
-        : format === "yaml" ? ExportFormat.YAML
-        : format === "sql" ? ExportFormat.JSON // SQL not directly supported, fallback to JSON
-        : ExportFormat.JSON
+      let exportFormat: ExportFormat
+      if (format === "json") {
+        exportFormat = ExportFormat.JSON
+      } else if (format === "yaml") {
+        exportFormat = ExportFormat.YAML
+      } else if (format === "sql") {
+        // SQL export not implemented yet
+        toast({
+          title: "SQL Export Not Available",
+          description: "SQL export is not yet implemented. Using JSON format instead.",
+          variant: "destructive",
+        })
+        exportFormat = ExportFormat.JSON
+      } else {
+        exportFormat = ExportFormat.JSON
+      }
 
       // Use unified exporter to serialize according to format
       const exporter = createExporter()

@@ -78,6 +78,9 @@ export async function updateRelationship(id: string, data: Partial<Relationship>
     `UPDATE relationships SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
     values,
   )
+  if (!relationship) {
+    throw new Error(`Relationship with id ${id} not found`)
+  }
   return relationship
 }
 

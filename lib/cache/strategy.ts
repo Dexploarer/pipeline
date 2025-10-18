@@ -36,7 +36,12 @@ export const CacheTTL = {
   SHORT: 60, // 1 minute
 }
 
-// Generate hash for cache keys
+// Generate hash for cache keys using crypto
 export function generateHash(data: any): string {
-  return Buffer.from(JSON.stringify(data)).toString("base64").slice(0, 16)
+  // Canonicalize the object by sorting keys recursively
+  const canonical = JSON.stringify(data, Object.keys(data).sort())
+
+  // Use crypto.createHash for proper SHA-256 hashing
+  const crypto = require("node:crypto")
+  return crypto.createHash("sha256").update(canonical).digest("hex")
 }

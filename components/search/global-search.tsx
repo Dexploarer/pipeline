@@ -60,7 +60,11 @@ export function GlobalSearch(): React.ReactElement {
           placeholder="Search NPCs, quests, lore..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query.length > 0 && setShowResults(true)}
+          onFocus={() => {
+            if (query.length > 0) {
+              setShowResults(true)
+            }
+          }}
           className="pl-9 pr-9"
         />
         {isSearching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin" />}

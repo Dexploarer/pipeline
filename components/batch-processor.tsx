@@ -72,21 +72,92 @@ export function BatchProcessor() {
       const result = event.target?.result
       if (typeof result !== "string") return
 
-      const csv = result
-      const lines = csv.split("\n")
-      const firstLine = lines[0]
-      if (firstLine === undefined) return
-      const headers = firstLine.split(",")
+      // Use papaparse for robust CSV parsing
+      import("papaparse").then((Papa) => {
+        Papa.default.parse(result, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true,
+          complete: (results) => {
+            if (results.errors.length > 0) {
+              toast({
+                title: "CSV Parse Error",
+                description: `Failed to parse CSV: ${results.errors[0]?.message || "Unknown error"}`,
+                variant: "destructive",
+              })
+              return
+            }
 
-      toast({
-        title: "CSV Imported",
-        description: `Loaded ${lines.length - 1} entries from ${file.name}`,
+            const rowCount = results.data.length
+            const headers = results.meta.fields || []
+
+            toast({
+              title: "CSV Imported",
+              description: `Successfully loaded ${rowCount} entries from ${file.name}`,
+            })
+
+            // Process the parsed CSV data
+            processImportedData(results.data)
+          },
+          error: (error: Error) => {
+            toast({
+              title: "CSV Import Failed",
+              description: `Error reading CSV: ${error.message}`,
+              variant: "destructive",
+            })
+          },
+        })
       })
-
-      // Process CSV data here
-      console.log("[v0] CSV imported:", { headers, rowCount: lines.length - 1 })
     }
     reader.readAsText(file)
+  }
+
+  const processImportedData = (data: unknown[]) => {
+    // Create a new batch job for the imported data
+    const newJob: BatchJob = {
+      id: `import_${Date.now()}`,
+      type: "import",
+      total: data.length,
+      completed: 0,
+      failed: 0,
+      status: "processing",
+    }
+    setJobs((prev) => [newJob, ...prev])
+
+    // Simulate processing each row of imported data
+    let processed = 0
+    const processNextBatch = () => {
+      const batchSize = 10
+      const endIndex = Math.min(processed + batchSize, data.length)
+
+      for (let i = processed; i < endIndex; i++) {
+        // TODO: Actually process each row of data
+        // - Validate data against schema
+        // - Transform data into required format
+        // - Store in database or state
+        // - Handle any processing errors
+        console.log(`Processing row ${i + 1}:`, data[i])
+      }
+
+      processed = endIndex
+      setJobs((prev) =>
+        prev.map((job) =>
+          job.id === newJob.id
+            ? {
+                ...job,
+                completed: processed,
+                status: processed === data.length ? "completed" : "processing",
+              }
+            : job,
+        ),
+      )
+
+      if (processed < data.length) {
+        setTimeout(processNextBatch, 100)
+      }
+    }
+
+    processNextBatch()
   }
 
   const handleExportResults = (job: BatchJob) => {

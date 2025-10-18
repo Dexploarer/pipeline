@@ -117,21 +117,30 @@ export function LayeredQuestBuilder() {
       return
     }
 
-    const drafts = JSON.parse(localStorage.getItem("quest-drafts") || "[]")
-    const draftIndex = drafts.findIndex((d: any) => d.title === quest.title)
+    try {
+      const drafts = JSON.parse(localStorage.getItem("quest-drafts") || "[]")
+      const draftIndex = drafts.findIndex((d: any) => d.title === quest.title)
 
-    if (draftIndex >= 0) {
-      drafts[draftIndex] = { ...quest, lastModified: Date.now() }
-    } else {
-      drafts.push({ ...quest, lastModified: Date.now() })
+      if (draftIndex >= 0) {
+        drafts[draftIndex] = { ...quest, lastModified: Date.now() }
+      } else {
+        drafts.push({ ...quest, lastModified: Date.now() })
+      }
+
+      localStorage.setItem("quest-drafts", JSON.stringify(drafts))
+
+      toast({
+        title: "Draft Saved",
+        description: `Quest "${quest.title}" has been saved to drafts`,
+      })
+    } catch (error) {
+      console.error("Failed to save draft:", error)
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save draft to local storage",
+        variant: "destructive",
+      })
     }
-
-    localStorage.setItem("quest-drafts", JSON.stringify(drafts))
-
-    toast({
-      title: "Draft Saved",
-      description: `Quest "${quest.title}" has been saved to drafts`,
-    })
   }
 
   const handleExportQuest = () => {
@@ -160,9 +169,29 @@ export function LayeredQuestBuilder() {
   }
 
   const handleCombineLayers = () => {
+    // Validate quest exists and has required fields
+    if (!quest || typeof quest.title !== 'string' || quest.title.trim() === '') {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid quest title before combining layers",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate layers structure
+    if (!quest.layers || typeof quest.layers !== 'object') {
+      toast({
+        title: "Validation Error",
+        description: "Quest layers are not properly configured",
+        variant: "destructive",
+      })
+      return
+    }
+
     const combinedQuest: LayeredQuest = {
       id: `quest-${Date.now()}`,
-      title: quest.title!,
+      title: quest.title,
       version: "1.0.0",
       layers: quest.layers as any,
       metadata: {
@@ -179,7 +208,7 @@ export function LayeredQuestBuilder() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `combined-quest-${quest.title!.toLowerCase().replace(/\s+/g, "-")}.json`
+    a.download = `combined-quest-${quest.title.toLowerCase().replace(/\s+/g, "-")}.json`
     a.click()
     URL.revokeObjectURL(url)
 
@@ -277,14 +306,14 @@ export function LayeredQuestBuilder() {
                 <Label>Difficulty</Label>
                 <select
                   className="w-full mt-2 p-2 rounded-md border border-border bg-background"
-                  value={quest.layers?.gameflow?.difficulty}
+                  value={quest.layers?.gameflow?.difficulty ?? "medium"}
                   onChange={(e) =>
                     setQuest({
                       ...quest,
                       layers: {
-                        ...quest.layers!,
+                        ...(quest.layers ?? {}),
                         gameflow: {
-                          ...quest.layers!.gameflow,
+                          ...(quest.layers?.gameflow ?? {}),
                           difficulty: e.target.value as any,
                         },
                       },
@@ -302,14 +331,14 @@ export function LayeredQuestBuilder() {
                 <Label>Estimated Duration (minutes)</Label>
                 <Input
                   type="number"
-                  value={quest.layers?.gameflow?.estimatedDuration}
+                  value={quest.layers?.gameflow?.estimatedDuration ?? 30}
                   onChange={(e) =>
                     setQuest({
                       ...quest,
                       layers: {
-                        ...quest.layers!,
+                        ...(quest.layers ?? {}),
                         gameflow: {
-                          ...quest.layers!.gameflow,
+                          ...(quest.layers?.gameflow ?? {}),
                           estimatedDuration: Number.parseInt(e.target.value),
                         },
                       },
@@ -324,7 +353,7 @@ export function LayeredQuestBuilder() {
                 onChange={(data) =>
                   setQuest({
                     ...quest,
-                    layers: { ...quest.layers!, gameflow: data },
+                    layers: { ...(quest.layers ?? {}), gameflow: data },
                   })
                 }
               />
@@ -348,14 +377,14 @@ export function LayeredQuestBuilder() {
               <div>
                 <Label>Summary</Label>
                 <Textarea
-                  value={quest.layers?.lore?.summary}
+                  value={quest.layers?.lore?.summary ?? ""}
                   onChange={(e) =>
                     setQuest({
                       ...quest,
                       layers: {
-                        ...quest.layers!,
+                        ...(quest.layers ?? {}),
                         lore: {
-                          ...quest.layers!.lore,
+                          ...(quest.layers?.lore ?? {}),
                           summary: e.target.value,
                         },
                       },
@@ -369,14 +398,14 @@ export function LayeredQuestBuilder() {
               <div>
                 <Label>Cultural Context</Label>
                 <Textarea
-                  value={quest.layers?.lore?.culturalContext}
+                  value={quest.layers?.lore?.culturalContext ?? ""}
                   onChange={(e) =>
                     setQuest({
                       ...quest,
                       layers: {
-                        ...quest.layers!,
+                        ...(quest.layers ?? {}),
                         lore: {
-                          ...quest.layers!.lore,
+                          ...(quest.layers?.lore ?? {}),
                           culturalContext: e.target.value,
                         },
                       },
@@ -409,7 +438,7 @@ export function LayeredQuestBuilder() {
               onChange={(data) =>
                 setQuest({
                   ...quest,
-                  layers: { ...quest.layers!, history: data },
+                  layers: { ...(quest.layers ?? {}), history: data },
                 })
               }
             />
@@ -434,7 +463,7 @@ export function LayeredQuestBuilder() {
               onChange={(data) =>
                 setQuest({
                   ...quest,
-                  layers: { ...quest.layers!, relationships: data },
+                  layers: { ...(quest.layers ?? {}), relationships: data },
                 })
               }
             />

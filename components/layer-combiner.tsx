@@ -37,7 +37,11 @@ export function LayerCombiner({ quest, onCombine }: LayerCombinerProps) {
       if (!gameflowData.objectives || gameflowData.objectives.length === 0) {
         issues.push("No objectives defined")
       }
-      if (!gameflowData.rewards || (gameflowData.rewards.experience === 0 && gameflowData.rewards.gold === 0)) {
+      // Check if rewards exist and if both experience and gold are zero/null/undefined
+      // Using OR (||) - at least one reward type must have a value
+      if (!gameflowData.rewards ||
+          ((gameflowData.rewards.experience ?? 0) === 0 &&
+           (gameflowData.rewards.gold ?? 0) === 0)) {
         issues.push("No rewards configured")
       }
     }

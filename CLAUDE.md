@@ -4,4 +4,4 @@ globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
 alwaysApply: false
 ---
 
-See [CLAUDE.md](../../CLAUDE.md) for the complete Bun usage guidelines.
+Always use Bun for package management and running scripts instead of Node.js, npm, pnpm, or vite.

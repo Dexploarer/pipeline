@@ -62,6 +62,15 @@ export async function updateZone(id: string, data: Partial<Zone>): Promise<Zone>
     values.push(JSON.stringify(data.environmentData))
   }
 
+  if (updates.length === 0) {
+    // No updates provided, return existing record
+    const existing = await getZone(id)
+    if (!existing) {
+      throw new Error(`Zone with id ${id} not found`)
+    }
+    return existing
+  }
+
   values.push(id)
   const [zone] = await query<Zone>(
     `UPDATE zones SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,

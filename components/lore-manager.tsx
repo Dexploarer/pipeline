@@ -66,7 +66,7 @@ export function LoreManager() {
 
       const data = await response.json()
       const entry = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         title: newEntry.title || "Untitled",
         content: data.content,
         category: newEntry.category,
@@ -96,7 +96,7 @@ export function LoreManager() {
     }
 
     const entry = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       title: newEntry.title,
       content: newEntry.content,
       category: newEntry.category,
@@ -128,7 +128,7 @@ export function LoreManager() {
     if (entry !== undefined) {
       const duplicate = {
         ...entry,
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         title: `${entry.title} (Copy)`,
         createdAt: new Date().toISOString(),
       }

@@ -38,13 +38,44 @@ export function RelationshipGraph() {
   }
 
   const handleSaveRelationship = () => {
+    // Validate both entities are filled
     if (!newRel.from || !newRel.to) {
       toast({ title: "Error", description: "Please fill in both entities", variant: "destructive" })
       return
     }
 
+    // Ensure from !== to
+    if (newRel.from === newRel.to) {
+      toast({ title: "Error", description: "Entities cannot have a relationship with themselves", variant: "destructive" })
+      return
+    }
+
+    // Validate strength is a number within -100 to 100
+    if (typeof newRel.strength !== "number" || isNaN(newRel.strength)) {
+      toast({ title: "Error", description: "Strength must be a valid number", variant: "destructive" })
+      return
+    }
+
+    if (newRel.strength < -100 || newRel.strength > 100) {
+      toast({ title: "Error", description: "Strength must be between -100 and 100", variant: "destructive" })
+      return
+    }
+
+    // Validate type is one of allowed values
+    const allowedTypes = ["ally", "rival", "neutral", "enemy", "family", "romantic", "mentor"]
+    if (!allowedTypes.includes(newRel.type)) {
+      toast({ title: "Error", description: "Invalid relationship type", variant: "destructive" })
+      return
+    }
+
+    // Enforce description length <= 500 chars
+    if (newRel.description.length > 500) {
+      toast({ title: "Error", description: "Description must be 500 characters or less", variant: "destructive" })
+      return
+    }
+
     const relationship = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       ...newRel,
     }
 
@@ -68,7 +99,7 @@ export function RelationshipGraph() {
     if (rel) {
       const duplicate = {
         ...rel,
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         from: `${rel.from} (Copy)`,
       }
       addRelationship(duplicate)
@@ -85,7 +116,7 @@ export function RelationshipGraph() {
     toast({ title: "Generating Relationships", description: "AI is analyzing existing lore..." })
     setTimeout(() => {
       const generated = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         from: "Shadow Council",
         to: "Royal Guard",
         type: "enemy" as const,

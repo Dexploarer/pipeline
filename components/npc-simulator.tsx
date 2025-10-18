@@ -41,7 +41,7 @@ export function NPCSimulator() {
   const handleStart = () => {
     setIsRunning(true)
     const welcomeMsg: Message = {
-      id: `msg_${Date.now()}`,
+      id: crypto.randomUUID(),
       sender: "npc",
       text: currentNPC.dialogues.find((d) => d.id === "greeting")?.text || "Greetings, traveler!",
       timestamp: Date.now(),
@@ -69,7 +69,7 @@ export function NPCSimulator() {
     if (!input.trim()) return
 
     const playerMsg: Message = {
-      id: `msg_${Date.now()}`,
+      id: crypto.randomUUID(),
       sender: "player",
       text: input,
       timestamp: Date.now(),
@@ -93,7 +93,7 @@ export function NPCSimulator() {
       const data = await response.json()
 
       const npcMsg: Message = {
-        id: `msg_${Date.now() + 1}`,
+        id: crypto.randomUUID(),
         sender: "npc",
         text: data.response,
         timestamp: Date.now(),
@@ -112,7 +112,7 @@ export function NPCSimulator() {
     } catch (error) {
       console.error("Simulation error:", error)
       const npcMsg: Message = {
-        id: `msg_${Date.now() + 1}`,
+        id: crypto.randomUUID(),
         sender: "npc",
         text: "That's an interesting request! Let me think about how I can help you with that.",
         timestamp: Date.now(),

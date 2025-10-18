@@ -222,11 +222,33 @@ export class CacheClient {
   }
 
   // Set expiration
-  async expire(key: string, seconds: number): Promise<void> {
+  async expire(key: string, seconds: number): Promise<boolean> {
     try {
-      await this.redis.expire(key, seconds)
+      const result = await this.redis.expire(key, seconds)
+      return result === 1
     } catch (error) {
       console.error("[v0] Cache expire error:", error)
+      return false
+    }
+  }
+
+  // Get TTL
+  async ttl(key: string): Promise<number> {
+    try {
+      return await this.redis.ttl(key)
+    } catch (error) {
+      console.error("[v0] Cache ttl error:", error)
+      return -2
+    }
+  }
+
+  // Execute Lua script (for atomic operations)
+  async eval(script: string, keys: string[], args: (string | number)[]): Promise<any> {
+    try {
+      return await this.redis.eval(script, keys, args)
+    } catch (error) {
+      console.error("[v0] Cache eval error:", error)
+      throw error
     }
   }
 }

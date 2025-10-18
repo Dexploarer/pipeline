@@ -33,7 +33,8 @@ const rolePermissions: Record<Role, Permission> = {
 }
 
 export function getPermissions(role: Role): Permission {
-  return rolePermissions[role]
+  // Return defensive copy using structuredClone to prevent mutation
+  return structuredClone(rolePermissions[role])
 }
 
 export function canPerformAction(role: Role, action: keyof Permission): boolean {

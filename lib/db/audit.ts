@@ -32,6 +32,17 @@ export async function createAuditLog(
     })
   } catch (error) {
     console.error("[v0] Failed to create audit log:", error)
+
+    // TODO: Send to error tracking service (e.g., Sentry)
+    // if (typeof Sentry !== 'undefined') {
+    //   Sentry.captureException(error, {
+    //     tags: { component: 'audit-log' },
+    //     extra: { action, entityType, entityId }
+    //   })
+    // }
+
+    // Rethrow to ensure caller knows audit failed
+    throw new Error(`Audit log creation failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 

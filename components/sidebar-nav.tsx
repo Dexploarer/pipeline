@@ -51,6 +51,7 @@ export function SidebarNav({ activeTab, onTabChange }: SidebarNavProps) {
     <>
       {/* Sidebar */}
       <aside
+        id="sidebar-navigation"
         className={cn(
           "fixed left-0 top-[73px] h-[calc(100vh-73px)] bg-card/40 backdrop-blur-xl z-40 transition-all duration-300 ease-in-out shadow-2xl",
           isHovered ? "w-64" : "w-0",
@@ -83,9 +84,20 @@ export function SidebarNav({ activeTab, onTabChange }: SidebarNavProps) {
       </aside>
 
       {/* Hover trigger area */}
-      <div
+      <button
+        type="button"
         className="fixed left-0 top-[73px] w-1 h-[calc(100vh-73px)] z-50 cursor-pointer hover:bg-primary/20 transition-colors"
         onMouseEnter={() => setIsHovered(true)}
+        onClick={() => setIsHovered(!isHovered)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            setIsHovered(!isHovered)
+          }
+        }}
+        aria-label="Toggle sidebar navigation"
+        aria-controls="sidebar-navigation"
+        aria-expanded={isHovered}
       />
     </>
   )

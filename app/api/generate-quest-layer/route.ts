@@ -3,10 +3,36 @@ import { getModelForTask } from "@/lib/ai-router"
 import { buildGenerationContext, formatContextForPrompt } from "@/lib/ai/context-builder"
 import { getCachedAIGeneration, cacheAIGeneration } from "@/lib/cache/patterns"
 import { CacheTiers, generateHash } from "@/lib/cache/strategy"
+import { z } from "zod"
+
+// Request validation schema
+const requestSchema = z.object({
+  questTitle: z.string().min(1, "Quest title is required"),
+  layerType: z.string(),
+  existingLayers: z.any().optional(),
+  model: z.string().optional(),
+  zoneId: z.union([z.string(), z.number()]).optional(),
+  relatedNpcIds: z.array(z.union([z.string(), z.number()])).optional(),
+})
 
 export async function POST(req: Request) {
   try {
-    const { questTitle, layerType, existingLayers, model: customModel, zoneId, relatedNpcIds } = await req.json()
+    // TODO: Add authentication check here
+    // const session = await getSession(req)
+    // if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+    // Validate request body
+    const body = await req.json()
+    const validationResult = requestSchema.safeParse(body)
+
+    if (!validationResult.success) {
+      return Response.json(
+        { error: "Invalid request", details: validationResult.error.errors },
+        { status: 400 }
+      )
+    }
+
+    const { questTitle, layerType, existingLayers, model: customModel, zoneId, relatedNpcIds } = validationResult.data
 
     const context = await buildGenerationContext({
       zoneId,
@@ -112,10 +138,6 @@ Return as JSON matching the WorldEventLayer type.`,
     }
 
     const prompt = layerPrompts[layerType] ?? layerPrompts["gameflow"]
-
-    if (!prompt) {
-      throw new Error("Invalid layer type")
-    }
 
     const selectedModel = getModelForTask("quest_generation", customModel, "quality")
 

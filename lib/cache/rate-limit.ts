@@ -6,6 +6,24 @@ interface RateLimitResult {
   resetAt: Date
 }
 
+// Lua script for atomic rate limit check
+const RATE_LIMIT_SCRIPT = `
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+
+local count = redis.call('INCR', key)
+local ttl = redis.call('TTL', key)
+
+-- If this is a new key or key has no TTL, set expiration
+if ttl == -1 or ttl == -2 then
+  redis.call('EXPIRE', key, window)
+  ttl = window
+end
+
+return {count, ttl}
+`
+
 // Sliding window rate limiter
 export async function checkRateLimit(
   identifier: string,
@@ -16,26 +34,13 @@ export async function checkRateLimit(
   const now = Date.now()
 
   try {
-    // Check TTL to see if key exists and has expiration
-    const ttl = await cache.ttl(key)
+    // Execute atomic Lua script for increment and TTL management
+    const result = await cache.eval(RATE_LIMIT_SCRIPT, [key], [limit, windowSeconds])
+    const [count, ttl] = result as [number, number]
 
-    // Increment the counter
-    const count = await cache.incr(key)
-
-    // If this is a new key (TTL was -2 before incr, now -1) or key has no TTL, set expiration atomically
-    if (ttl === -2 || ttl === -1) {
-      const setResult = await cache.expire(key, windowSeconds)
-      // If expire failed, the key might have been created by another process
-      // but we should still have a valid count
-      if (!setResult) {
-        console.warn(`[v0] Failed to set TTL for rate limit key: ${key}`)
-      }
-    }
-
-    // Calculate reset time based on actual TTL
-    const actualTtl = await cache.ttl(key)
-    const resetAt = actualTtl > 0
-      ? new Date(now + actualTtl * 1000)
+    // Calculate reset time based on TTL
+    const resetAt = ttl > 0
+      ? new Date(now + ttl * 1000)
       : new Date(now + windowSeconds * 1000)
 
     const allowed = count <= limit

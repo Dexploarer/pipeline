@@ -46,6 +46,18 @@ export async function POST(request: Request) {
       )
     }
 
+    // Validate each element in relatedNpcIds array
+    if (relatedNpcIds !== undefined && Array.isArray(relatedNpcIds)) {
+      for (const id of relatedNpcIds) {
+        if (typeof id !== "string" && typeof id !== "number") {
+          return NextResponse.json(
+            { error: "Invalid input: each element in 'relatedNpcIds' must be a string or number" },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
     const context = await buildGenerationContext({
       zoneId,
       relatedNpcIds,
@@ -54,7 +66,12 @@ export async function POST(request: Request) {
 
     const contextPrompt = formatContextForPrompt(context)
 
-    const cacheKey = CacheTiers.AI_NPC(archetype, generateHash({ prompt, archetype, zoneId }))
+    // Include relatedNpcIds in cache key (sort and serialize for consistent hashing)
+    const sortedRelatedNpcIds = relatedNpcIds ? [...relatedNpcIds].sort() : []
+    const cacheKey = CacheTiers.AI_NPC(
+      archetype,
+      generateHash({ prompt, archetype, zoneId, relatedNpcIds: sortedRelatedNpcIds })
+    )
     const cached = await getCachedAIGeneration(cacheKey)
     if (cached) {
       console.log("[v0] Returning cached NPC generation")

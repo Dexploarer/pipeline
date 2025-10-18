@@ -449,7 +449,7 @@ BEGIN
       OLD.id,
       OLD.version,
       row_to_json(OLD),
-      COALESCE(NEW.updated_by, OLD.created_by) -- Use updated_by if available, fallback to created_by
+      OLD.created_by -- Use the original creator from OLD record
     );
     NEW.version = OLD.version + 1;
   END IF;

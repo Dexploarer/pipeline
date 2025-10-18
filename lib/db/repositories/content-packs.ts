@@ -64,6 +64,15 @@ export async function updateContentPack(id: string, data: Partial<ContentPack>):
     values.push(JSON.stringify(data.metadata))
   }
 
+  if (updates.length === 0) {
+    // No updates provided, return existing record
+    const existing = await getContentPack(id)
+    if (!existing) {
+      throw new Error(`Content pack with id ${id} not found`)
+    }
+    return existing
+  }
+
   values.push(id)
   const [pack] = await query<ContentPack>(
     `UPDATE content_packs SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,

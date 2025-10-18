@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, XCircle, AlertTriangle, Play, Loader2 } from "lucide-react"
+import { useNPCStore } from "@/lib/stores/npc-store"
+import { useQuestStore } from "@/lib/stores/quest-store"
+import { useLoreStore } from "@/lib/stores/lore-store"
+import { toast } from "@/hooks/use-toast"
 
 interface ValidationResult {
   category: string
@@ -23,46 +27,89 @@ export function ValidationSuite() {
   const [running, setRunning] = useState(false)
   const [results, setResults] = useState<ValidationResult[]>([])
 
+  const npcs = useNPCStore((state) => state.npcs)
+  const quests = useQuestStore((state) => state.quests)
+  const loreEntries = useLoreStore((state) => state.loreEntries)
+
   const runValidation = async () => {
     setRunning(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    setResults([])
 
-    setResults([
-      {
-        category: "NPC Scripts",
-        passed: 45,
-        failed: 2,
-        warnings: 3,
-        tests: [
-          { name: "Dialogue coherence", status: "pass", message: "All dialogues are coherent" },
-          { name: "Quest availability", status: "fail", message: "2 quests have missing prerequisites" },
-          { name: "Personality consistency", status: "warning", message: "3 NPCs have conflicting traits" },
-        ],
-      },
-      {
-        category: "Quest Logic",
-        passed: 38,
-        failed: 0,
-        warnings: 1,
-        tests: [
-          { name: "Objective completability", status: "pass", message: "All objectives can be completed" },
-          { name: "Reward balance", status: "warning", message: "Some rewards may be too generous" },
-          { name: "Quest chain integrity", status: "pass", message: "All quest chains are valid" },
-        ],
-      },
-      {
-        category: "Lore Consistency",
-        passed: 52,
-        failed: 1,
-        warnings: 0,
-        tests: [
-          { name: "Timeline consistency", status: "pass", message: "No timeline conflicts detected" },
-          { name: "Faction relationships", status: "fail", message: "Conflicting faction allegiances found" },
-          { name: "Historical accuracy", status: "pass", message: "All historical references are valid" },
-        ],
-      },
-    ])
-    setRunning(false)
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+      const response = await fetch("/api/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          npcs,
+          quests,
+          loreEntries,
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      // Validate response structure
+      if (!data.results || !Array.isArray(data.results)) {
+        throw new Error("Invalid response format: missing results array")
+      }
+
+      // Validate each result has required fields
+      for (const result of data.results) {
+        if (!result.category || typeof result.passed !== "number" ||
+            typeof result.failed !== "number" || typeof result.warnings !== "number" ||
+            !Array.isArray(result.tests)) {
+          throw new Error("Invalid result format in validation response")
+        }
+      }
+
+      setResults(data.results)
+
+      // Show success toast
+      const totalPassed = data.results.reduce((sum: number, r: ValidationResult) => sum + r.passed, 0)
+      const totalFailed = data.results.reduce((sum: number, r: ValidationResult) => sum + r.failed, 0)
+      const totalWarnings = data.results.reduce((sum: number, r: ValidationResult) => sum + r.warnings, 0)
+
+      toast({
+        title: "Validation Complete",
+        description: `${totalPassed} passed, ${totalFailed} failed, ${totalWarnings} warnings`,
+        variant: totalFailed > 0 ? "destructive" : "default",
+      })
+    } catch (error) {
+      console.error("Validation failed:", error)
+
+      let errorMessage = "Failed to run validation"
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          errorMessage = "Validation timed out after 30 seconds"
+        } else {
+          errorMessage = error.message
+        }
+      }
+
+      toast({
+        title: "Validation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
+
+      setResults([])
+    } finally {
+      setRunning(false)
+    }
   }
 
   return (
