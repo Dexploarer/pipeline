@@ -6,8 +6,6 @@
 import type {
   IGameSystem,
   GameSystemDefinition,
-  GameSystemResult,
-  IAgentRuntime,
 } from "@/lib/types/content-pack"
 
 export interface GameSystemGeneratorParams {
@@ -622,7 +620,7 @@ async function generateQueryWorldCode(
  */
 async function generateUpdateWorldCode(
   name: string,
-  systemType: GameSystemType,
+  _systemType: GameSystemType,
   context: GameSystemGeneratorParams["context"]
 ): Promise<string> {
   return `async (updates, runtime) => {

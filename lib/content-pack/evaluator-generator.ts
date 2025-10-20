@@ -6,10 +6,6 @@
 import type {
   Evaluator,
   EvaluatorDefinition,
-  Memory,
-  State,
-  IAgentRuntime,
-  HandlerCallback,
 } from "@/lib/types/content-pack"
 
 export interface EvaluatorGeneratorParams {

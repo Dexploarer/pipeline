@@ -4,7 +4,7 @@ import { generateHash } from "../cache/strategy"
 // Generate embedding for text using AI SDK
 export async function generateEmbedding(text: string): Promise<number[]> {
   // Validate API key is present
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env["OPENAI_API_KEY"]
   if (!apiKey || apiKey.trim() === "") {
     throw new Error("Missing OPENAI_API_KEY environment variable")
   }
@@ -25,7 +25,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env["OPENAI_API_KEY"]}`,
       },
       body: JSON.stringify({
         model: "text-embedding-3-small",

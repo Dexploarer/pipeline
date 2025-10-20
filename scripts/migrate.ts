@@ -36,7 +36,8 @@ async function runMigrations(): Promise<void> {
 
     // Execute schema
     console.log("⚙️  Running migrations...")
-    await sql(schema)
+    const template = Object.assign([schema], { raw: [schema] }) as TemplateStringsArray
+    await sql(template)
 
     console.log("\n✅ Migration completed successfully!")
     console.log("\n📊 Database structure:")

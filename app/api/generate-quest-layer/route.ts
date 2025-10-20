@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     if (!validationResult.success) {
       return Response.json(
-        { error: "Invalid request", details: validationResult.error.errors },
+        { error: "Invalid request", details: validationResult.error.issues },
         { status: 400 }
       )
     }
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
     const { questTitle, layerType, existingLayers, model: customModel, zoneId, relatedNpcIds } = validationResult.data
 
     const context = await buildGenerationContext({
-      zoneId,
-      relatedNpcIds,
+      zoneId: zoneId !== undefined ? String(zoneId) : undefined,
+      relatedNpcIds: relatedNpcIds?.map(String),
       includeRelationships: true,
     })
 
@@ -138,6 +138,10 @@ Return as JSON matching the WorldEventLayer type.`,
     }
 
     const prompt = layerPrompts[layerType] ?? layerPrompts["gameflow"]
+
+    if (!prompt) {
+      return Response.json({ error: "Invalid layer type" }, { status: 400 })
+    }
 
     const selectedModel = getModelForTask("quest_generation", customModel, "quality")
 

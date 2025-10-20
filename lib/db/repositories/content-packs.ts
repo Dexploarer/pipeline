@@ -34,6 +34,7 @@ export async function createContentPack(
       JSON.stringify(data.metadata || {}),
     ],
   )
+  if (!pack) throw new Error("Failed to create content pack")
   return pack
 }
 
@@ -78,6 +79,7 @@ export async function updateContentPack(id: string, data: Partial<ContentPack>):
     `UPDATE content_packs SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
     values,
   )
+  if (!pack) throw new Error("Failed to update content pack")
   return pack
 }
 

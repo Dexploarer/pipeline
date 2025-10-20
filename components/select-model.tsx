@@ -93,9 +93,9 @@ export function SelectModel({ value, onValueChange, placeholder = "Select model.
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0">
-        <Command>
-          <CommandInput placeholder="Search models..." />
+      <PopoverContent className="w-[400px] p-0 bg-card border-border">
+        <Command className="bg-card">
+          <CommandInput placeholder="Search models..." className="bg-background" />
           <CommandList>
             <CommandEmpty>No model found.</CommandEmpty>
             <CommandGroup>
@@ -103,10 +103,11 @@ export function SelectModel({ value, onValueChange, placeholder = "Select model.
                 <CommandItem
                   key={model.value}
                   value={model.value}
-                  onSelect={(currentValue) => {
+                  onSelect={(currentValue: string) => {
                     onValueChange?.(currentValue === value ? "" : currentValue)
                     setOpen(false)
                   }}
+                  className="cursor-pointer"
                 >
                   <Check className={cn("mr-2 h-4 w-4", value === model.value ? "opacity-100" : "opacity-0")} />
                   <div className="flex flex-col gap-1 flex-1">

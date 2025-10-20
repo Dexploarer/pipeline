@@ -11,11 +11,12 @@ export async function createZone(data: Omit<Zone, "id" | "createdAt" | "updatedA
       data.description || null,
       data.type,
       data.dangerLevel,
-      JSON.stringify(data.coordinates),
+      JSON.stringify(data.coordinates || null),
       data.connectedZones || [],
-      JSON.stringify(data.environmentData || {}),
+      JSON.stringify(data.metadata || {}),
     ],
   )
+  if (!zone) throw new Error("Failed to create zone")
   return zone
 }
 
@@ -57,9 +58,9 @@ export async function updateZone(id: string, data: Partial<Zone>): Promise<Zone>
     updates.push(`connected_zones = $${paramIndex++}`)
     values.push(data.connectedZones)
   }
-  if (data.environmentData !== undefined) {
+  if (data.metadata !== undefined) {
     updates.push(`environment_data = $${paramIndex++}`)
-    values.push(JSON.stringify(data.environmentData))
+    values.push(JSON.stringify(data.metadata))
   }
 
   if (updates.length === 0) {
@@ -76,6 +77,7 @@ export async function updateZone(id: string, data: Partial<Zone>): Promise<Zone>
     `UPDATE zones SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
     values,
   )
+  if (!zone) throw new Error("Failed to update zone")
   return zone
 }
 

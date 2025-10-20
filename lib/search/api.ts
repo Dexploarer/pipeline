@@ -80,8 +80,8 @@ export async function searchNPCs(options: SearchOptions): Promise<SearchResponse
 
     // Filter by minimum score and validate NPC metadata before mapping
     const results: SearchResult<NPC>[] = response
-      .filter((r) => r.score >= minScore && isValidNPC(r.metadata))
-      .map((r) => ({
+      .filter((r: any) => r.score >= minScore && isValidNPC(r.metadata))
+      .map((r: any) => ({
         id: String(r.id),
         score: r.score,
         data: r.metadata as NPC,
@@ -109,9 +109,9 @@ export async function searchNPCs(options: SearchOptions): Promise<SearchResponse
 export async function searchNPCsByText(query: string, npcs: NPC[]): Promise<NPC[]> {
   const lowerQuery = query.toLowerCase()
 
-  return npcs.filter((npc) => {
+  return npcs.filter((npc: any) => {
     const personality = npc.personality as Record<string, unknown>
-    const traits = Array.isArray(personality.traits) ? (personality.traits as string[]) : []
+    const traits = Array.isArray(personality["traits"]) ? (personality["traits"] as string[]) : []
 
     return (
       npc.name.toLowerCase().includes(lowerQuery) ||

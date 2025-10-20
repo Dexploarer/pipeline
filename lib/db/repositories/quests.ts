@@ -53,6 +53,7 @@ export async function createQuest(data: Omit<Quest, "id" | "createdAt" | "update
       data.status || "draft",
     ],
   )
+  if (!quest) throw new Error("Failed to create quest")
   return quest
 }
 

@@ -56,12 +56,15 @@ export function isDatabaseAvailable(): boolean {
 }
 
 export async function query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]> {
-  if (!isInitialized) {
+  if (!isInitialized || !sql) {
     throw new Error("Database client not initialized")
   }
 
   try {
-    const result = await sql(text, params as unknown[])
+    // Neon SQL expects template strings, but we need to use it dynamically
+    // Create a template string array-like object
+    const template = Object.assign([text], { raw: [text] }) as TemplateStringsArray
+    const result = await sql(template, ...(params || []))
     return result as T[]
   } catch (error) {
     console.error("[v0] Database query error:", error)

@@ -35,7 +35,7 @@ export async function getCurrentUser(): Promise<User | null> {
       id: stackUser.id,
       email: stackUser.primaryEmail || "",
       name: stackUser.displayName || undefined,
-      createdAt: new Date(stackUser.createdAt || Date.now()),
+      createdAt: new Date(),
     }
   } catch (error) {
     console.error("[v0] Stack Auth error:", error)

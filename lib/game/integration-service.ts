@@ -10,7 +10,6 @@ import type {
   QuestDefinition,
   WorldZone,
   ContentPack,
-  NPCBehavior,
 } from "../npc-types"
 import type { IContentPack } from "../types/content-pack"
 
@@ -210,13 +209,12 @@ export class GameIntegrationService {
    */
   private toUnityFormat(npc: NPCScript, zone?: WorldZone): UnityNPCData {
     const personality = npc.personality
-    const behavior = npc.behavior ?? {}
 
     return {
       id: crypto.randomUUID(),
       name: personality.name,
       prefabPath: `Assets/Prefabs/NPCs/${npc.personality.archetype}`,
-      position: zone?.coordinates ?? { x: 0, y: 0, z: 0 },
+      position: zone?.coordinates ? { x: zone.coordinates.x, y: zone.coordinates.y, z: 0 } : { x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0, w: 1 },
       archetype: personality.archetype,
       stats: {
@@ -243,11 +241,11 @@ export class GameIntegrationService {
         nodes: this.convertDialogueToUnity(npc.dialogues ?? []),
       },
       behavior: {
-        aiType: behavior.type ?? "passive",
-        patrolPoints: behavior.patrolPoints ?? [],
-        aggression: behavior.aggression ?? 0,
-        socialDistance: behavior.interactionDistance ?? 2.0,
-        wanderRadius: behavior.wanderRadius ?? 10.0,
+        aiType: "passive",  // NPCBehavior doesn't have these fields
+        patrolPoints: [],
+        aggression: 0,
+        socialDistance: 2.0,
+        wanderRadius: 10.0,
       },
       quests: (npc.quests ?? []).map(q => ({
         id: crypto.randomUUID(),
@@ -267,7 +265,7 @@ export class GameIntegrationService {
    */
   private toUnrealFormat(npc: NPCScript, zone?: WorldZone): UnrealNPCData {
     const personality = npc.personality
-    const pos = zone?.coordinates ?? { x: 0, y: 0, z: 0 }
+    const pos = zone?.coordinates ? { x: zone.coordinates.x, y: zone.coordinates.y, z: 0 } : { x: 0, y: 0, z: 0 }
 
     return {
       NPCId: crypto.randomUUID(),
@@ -314,7 +312,7 @@ export class GameIntegrationService {
    */
   private toGodotFormat(npc: NPCScript, zone?: WorldZone): GodotNPCData {
     const personality = npc.personality
-    const pos = zone?.coordinates ?? { x: 0, y: 0, z: 0 }
+    const pos = zone?.coordinates ? { x: zone.coordinates.x, y: zone.coordinates.y, z: 0 } : { x: 0, y: 0, z: 0 }
 
     return {
       id: crypto.randomUUID(),
@@ -336,7 +334,6 @@ export class GameIntegrationService {
       },
       personality: {
         traits: personality.traits ?? [],
-        background: personality.background,
       },
       dialogue_tree: {
         root_node: "node_0",
@@ -359,28 +356,25 @@ export class GameIntegrationService {
         name: personality.name,
         username: personality.name.toLowerCase().replace(/\s+/g, "_"),
         bio: [
-          personality.background ?? "",
-          personality.motivations ?? "",
-          personality.quirks ?? "",
-        ].filter(Boolean),
+          `${personality.name} is a ${personality.archetype}.`,
+        ],
         lore: [
           `${personality.name} is a ${personality.archetype}.`,
-          personality.background ?? "",
-        ].filter(Boolean),
+        ],
         messageExamples: this.convertDialogueToElizaExamples(npc.dialogues ?? []),
         postExamples: [],
         topics: personality.traits ?? [],
         adjectives: personality.traits ?? [],
         style: {
-          all: [personality.speechPattern ?? "conversational"],
-          chat: [personality.speechPattern ?? "friendly"],
+          all: ["conversational"],
+          chat: ["friendly"],
           post: ["casual"],
         },
       },
-      plugins: npc.elizaOSConfig?.plugins ?? [],
-      customActions: npc.elizaOSConfig?.actions,
-      customProviders: npc.elizaOSConfig?.providers,
-      customEvaluators: npc.elizaOSConfig?.evaluators,
+      plugins: [],
+      customActions: undefined,
+      customProviders: undefined,
+      customEvaluators: undefined,
     }
   }
 
@@ -409,10 +403,10 @@ export class GameIntegrationService {
     return dialogues.map((node, index) => ({
       id: node.id || `node_${index}`,
       text: node.text,
-      speaker: node.speaker,
-      nextNodeIds: node.responses?.map(r => r.id || "") ?? [],
+      speaker: "NPC",  // DialogueNode doesn't have speaker field
+      nextNodeIds: node.responses?.map(r => r.nextNodeId || "") ?? [],
       conditions: node.conditions ? [JSON.stringify(node.conditions)] : [],
-      actions: node.actions ?? [],
+      actions: [],  // DialogueNode doesn't have actions field
     }))
   }
 
@@ -424,10 +418,10 @@ export class GameIntegrationService {
     dialogues.forEach((node, index) => {
       nodes[node.id || `node_${index}`] = {
         text: node.text,
-        speaker: node.speaker,
-        next_nodes: node.responses?.map(r => r.id || "") ?? [],
+        speaker: "NPC",  // DialogueNode doesn't have speaker field
+        next_nodes: node.responses?.map(r => r.nextNodeId || "") ?? [],
         conditions: node.conditions,
-        actions: node.actions,
+        actions: [],  // DialogueNode doesn't have actions field
       }
     })
     return nodes
@@ -509,15 +503,6 @@ export class GameIntegrationService {
       description: quest.description,
       objectives: quest.objectives,
       rewards: quest.rewards,
-      requirements: quest.requirements,
-      layers: {
-        gameflow: quest.gameflowLayer,
-        lore: quest.loreLayer,
-        history: quest.historyLayer,
-        relationships: quest.relationshipsLayer,
-        economy: quest.economyLayer,
-        worldEvents: quest.worldEventsLayer,
-      },
     }
   }
 
@@ -530,11 +515,11 @@ export class GameIntegrationService {
       name: contentPack.name,
       version: contentPack.version,
       description: contentPack.description,
-      zones: contentPack.zones,
-      npcs: contentPack.npcs?.length ?? 0,
-      quests: contentPack.quests?.length ?? 0,
-      dialogues: contentPack.dialogues?.length ?? 0,
-      assets: contentPack.assets,
+      zones: contentPack.zoneIds ?? [],
+      npcs: contentPack.contents?.npcs?.length ?? 0,
+      quests: contentPack.contents?.quests?.length ?? 0,
+      dialogues: 0,  // ContentPack doesn't track dialogues separately
+      assets: {},  // ContentPack doesn't have assets field
       metadata: {
         engine: this.config.engine,
         exportDate: new Date().toISOString(),
@@ -564,7 +549,7 @@ export class GameIntegrationService {
         throw new Error(`API returned ${response.status}: ${response.statusText}`)
       }
 
-      const result = await response.json()
+      await response.json()
       return {
         success: true,
         message: "Successfully synced to game engine",

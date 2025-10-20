@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const dialogues = Array.isArray(npcScript.dialogues) ? npcScript.dialogues : []
     const dialogueTexts = dialogues
       .map((d: any) => d?.text)
-      .filter((text): text is string => typeof text === "string")
+      .filter((text: any): text is string => typeof text === "string")
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
@@ -44,7 +44,7 @@ NPC Details:
 - Goals: ${goals.length > 0 ? goals.join(", ") : "None specified"}
 - Moral Alignment: ${moralAlignment}
 
-${dialogueTexts.length > 0 ? `Available Dialogues:\n${dialogueTexts.map(text => `- ${text}`).join("\n")}` : ""}
+${dialogueTexts.length > 0 ? `Available Dialogues:\n${dialogueTexts.map((text: string) => `- ${text}`).join("\n")}` : ""}
 
 Player says: "${sanitizedInput}"
 

@@ -196,7 +196,7 @@ export class CacheClient {
   async sadd(key: string, ...members: string[]): Promise<number> {
     try {
       if (members.length === 0) return 0
-      return await this.redis.sadd(key, ...members)
+      return await this.redis.sadd(key, ...(members as [string, ...string[]]))
     } catch (error) {
       console.error("[v0] Cache sadd error:", error)
       return 0

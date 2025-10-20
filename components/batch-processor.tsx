@@ -89,7 +89,6 @@ export function BatchProcessor() {
             }
 
             const rowCount = results.data.length
-            const headers = results.meta.fields || []
 
             toast({
               title: "CSV Imported",

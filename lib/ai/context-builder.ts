@@ -113,7 +113,7 @@ export async function buildGenerationContext(params: {
       context.quest = {
         title: quest.title,
         type: quest.questType,
-        objectives: quest.objectives ?? [],
+        objectives: (quest.objectives ?? []) as unknown as Array<Record<string, unknown>>,
         difficulty: quest.difficulty,
       }
     }

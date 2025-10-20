@@ -88,7 +88,7 @@ export function LayeredQuestBuilder() {
         layers: {
           ...(prev.layers ?? {}),
           [layerType]: data.layer,
-        },
+        } as any,
       }))
 
       toast({
@@ -315,8 +315,8 @@ export function LayeredQuestBuilder() {
                         gameflow: {
                           ...(quest.layers?.gameflow ?? {}),
                           difficulty: e.target.value as any,
-                        },
-                      },
+                        } as any,
+                      } as any,
                     })
                   }
                 >
@@ -340,8 +340,8 @@ export function LayeredQuestBuilder() {
                         gameflow: {
                           ...(quest.layers?.gameflow ?? {}),
                           estimatedDuration: Number.parseInt(e.target.value),
-                        },
-                      },
+                        } as any,
+                      } as any,
                     })
                   }
                   className="mt-2"
@@ -353,7 +353,7 @@ export function LayeredQuestBuilder() {
                 onChange={(data) =>
                   setQuest({
                     ...quest,
-                    layers: { ...(quest.layers ?? {}), gameflow: data },
+                    layers: { ...(quest.layers ?? {}), gameflow: data } as any,
                   })
                 }
               />
@@ -386,8 +386,8 @@ export function LayeredQuestBuilder() {
                         lore: {
                           ...(quest.layers?.lore ?? {}),
                           summary: e.target.value,
-                        },
-                      },
+                        } as any,
+                      } as any,
                     })
                   }
                   placeholder="Brief narrative summary of the quest..."
@@ -407,8 +407,8 @@ export function LayeredQuestBuilder() {
                         lore: {
                           ...(quest.layers?.lore ?? {}),
                           culturalContext: e.target.value,
-                        },
-                      },
+                        } as any,
+                      } as any,
                     })
                   }
                   placeholder="Cultural and societal context..."
@@ -438,7 +438,7 @@ export function LayeredQuestBuilder() {
               onChange={(data) =>
                 setQuest({
                   ...quest,
-                  layers: { ...(quest.layers ?? {}), history: data },
+                  layers: { ...(quest.layers ?? {}), history: data } as any,
                 })
               }
             />
@@ -463,7 +463,7 @@ export function LayeredQuestBuilder() {
               onChange={(data) =>
                 setQuest({
                   ...quest,
-                  layers: { ...(quest.layers ?? {}), relationships: data },
+                  layers: { ...(quest.layers ?? {}), relationships: data } as any,
                 })
               }
             />

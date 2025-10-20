@@ -7,8 +7,8 @@ export async function indexNPC(npc: NPC): Promise<void> {
   try {
     // Create searchable text from NPC data
     const personalityTraits =
-      Array.isArray((npc.personality as Record<string, unknown>).traits)
-        ? ((npc.personality as Record<string, unknown>).traits as string[]).join(" ")
+      Array.isArray((npc.personality as Record<string, unknown>)["traits"])
+        ? ((npc.personality as Record<string, unknown>)["traits"] as string[]).join(" ")
         : ""
 
     const searchableText = `

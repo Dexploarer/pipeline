@@ -234,9 +234,9 @@ async function generateSetStateCode(
  * Generate updateState code based on storage type
  */
 async function generateUpdateStateCode(
-  name: string,
-  storageType: StateStorageType,
-  context: StateManagerGeneratorParams["context"]
+  _name: string,
+  _storageType: StateStorageType,
+  _context: StateManagerGeneratorParams["context"]
 ): Promise<string> {
   return `async (playerId, updates) => {
   const currentState = await this.getState(playerId)
@@ -550,14 +550,10 @@ function compileStateManager<T extends PlayerStateData>(
   context: StateManagerGeneratorParams["context"]
 ): IStateManager<T> {
   // Create storage backend based on type
-  const storage = createStorage(storageType, context)
+  createStorage(storageType, context)
 
   // Create manager class
   class CompiledStateManager implements IStateManager<T> {
-    private stateCache: Map<string, T> = new Map()
-    private db: unknown = storage.db
-    private redis: unknown = storage.redis
-
     // eslint-disable-next-line @typescript-eslint/no-implied-eval
     getState = new Function(
       "playerId",
@@ -603,7 +599,7 @@ function compileStateManager<T extends PlayerStateData>(
  */
 function createStorage(
   storageType: StateStorageType,
-  context: StateManagerGeneratorParams["context"]
+  _context: StateManagerGeneratorParams["context"]
 ): { db?: unknown; redis?: unknown } {
   // In a real implementation, this would initialize actual storage clients
   // For now, return empty objects as placeholders

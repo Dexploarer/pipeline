@@ -218,8 +218,8 @@ async function authenticate(req: NextRequest): Promise<string | null> {
 // ============================================================================
 
 async function checkRateLimit(
-  req: NextRequest,
-  config: { requests: number; window: number }
+  _req: NextRequest,
+  _config: { requests: number; window: number }
 ): Promise<boolean> {
   // TODO: Implement actual rate limiting with Redis
   // This is a placeholder

@@ -6,9 +6,6 @@
 import type {
   Provider,
   ProviderDefinition,
-  Memory,
-  State,
-  IAgentRuntime,
 } from "@/lib/types/content-pack"
 
 export interface ProviderGeneratorParams {
@@ -188,7 +185,7 @@ function generateWorldStateProviderCode(
  */
 function generateNPCMemoryProviderCode(
   name: string,
-  context: ProviderGeneratorParams["context"]
+  _context: ProviderGeneratorParams["context"]
 ): string {
   return `async (runtime, message, state) => {
   try {
@@ -223,7 +220,7 @@ function generateNPCMemoryProviderCode(
  */
 function generatePlayerStateProviderCode(
   name: string,
-  context: ProviderGeneratorParams["context"]
+  _context: ProviderGeneratorParams["context"]
 ): string {
   return `async (runtime, message, state) => {
   try {
@@ -260,7 +257,7 @@ function generatePlayerStateProviderCode(
  */
 function generateRelationshipProviderCode(
   name: string,
-  context: ProviderGeneratorParams["context"]
+  _context: ProviderGeneratorParams["context"]
 ): string {
   return `async (runtime, message, state) => {
   try {
@@ -295,7 +292,7 @@ function generateRelationshipProviderCode(
  */
 function generateQuestProviderCode(
   name: string,
-  context: ProviderGeneratorParams["context"]
+  _context: ProviderGeneratorParams["context"]
 ): string {
   return `async (runtime, message, state) => {
   try {
@@ -331,7 +328,7 @@ function generateQuestProviderCode(
  */
 function generateInventoryProviderCode(
   name: string,
-  context: ProviderGeneratorParams["context"]
+  _context: ProviderGeneratorParams["context"]
 ): string {
   return `async (runtime, message, state) => {
   try {

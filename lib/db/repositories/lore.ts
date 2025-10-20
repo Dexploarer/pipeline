@@ -30,6 +30,7 @@ export async function createLoreEntry(data: Omit<LoreEntry, "id" | "createdAt" |
       data.timelinePosition || null,
     ],
   )
+  if (!lore) throw new Error("Failed to create lore entry")
   return lore
 }
 

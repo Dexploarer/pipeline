@@ -325,9 +325,9 @@ function generatePackageJson(metadata: ContentPackMetadata): string {
 
         const [, pkgName, version] = match
 
-        if (!version || version === "latest") {
+        if (!pkgName || !version || version === "latest") {
           throw new Error(
-            `Dependency "${pkgName}" must specify an explicit version (e.g., "^1.0.0", "~2.3.4", "1.2.3"). ` +
+            `Dependency "${pkgName || 'unknown'}" must specify an explicit version (e.g., "^1.0.0", "~2.3.4", "1.2.3"). ` +
             `Using "latest" breaks reproducible builds.`
           )
         }

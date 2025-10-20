@@ -27,7 +27,7 @@ export function NPCGenerator(): React.ReactElement {
     setGenerating(true)
 
     try {
-      const response = await fetch("/api/generate-npc", {
+      const response = await fetch("/api/generate-npc-v2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, archetype: template, model }),
@@ -123,13 +123,17 @@ export function NPCGenerator(): React.ReactElement {
               NPC Template
             </Label>
             <Select value={template} onValueChange={setTemplate}>
-              <SelectTrigger id="template" className="mt-2">
+              <SelectTrigger id="template" className="mt-2 w-full bg-background">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card">
                 <SelectItem value="quest-giver-merchant">Quest Giver (Merchant)</SelectItem>
                 <SelectItem value="warrior-companion">Warrior Companion</SelectItem>
                 <SelectItem value="mystic-lorekeeper">Mystic Lorekeeper</SelectItem>
+                <SelectItem value="rogue-informant">Rogue Informant</SelectItem>
+                <SelectItem value="noble-diplomat">Noble Diplomat</SelectItem>
+                <SelectItem value="scholar-researcher">Scholar Researcher</SelectItem>
+                <SelectItem value="commoner-farmer">Commoner Farmer</SelectItem>
               </SelectContent>
             </Select>
           </div>

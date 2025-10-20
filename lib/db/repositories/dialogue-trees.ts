@@ -21,7 +21,9 @@ export async function createDialogueTree(
   if (!result || result.length === 0) {
     throw new Error("Failed to create dialogue tree: no rows returned")
   }
-  return result[0]
+  const tree = result[0]
+  if (!tree) throw new Error("Failed to create dialogue tree")
+  return tree
 }
 
 export async function getDialogueTree(id: string): Promise<DialogueTree | null> {
@@ -61,6 +63,7 @@ export async function updateDialogueTree(id: string, data: Partial<DialogueTree>
     `UPDATE dialogue_trees SET ${updates.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
     values,
   )
+  if (!tree) throw new Error("Failed to update dialogue tree")
   return tree
 }
 

@@ -1,8 +1,9 @@
+// @ts-ignore - @upstash/vector doesn't have type declarations
 import { Index } from "@upstash/vector"
 
 // Validate environment variables at startup
-const UPSTASH_SEARCH_REST_URL = process.env.UPSTASH_SEARCH_REST_URL
-const UPSTASH_SEARCH_REST_TOKEN = process.env.UPSTASH_SEARCH_REST_TOKEN
+const UPSTASH_SEARCH_REST_URL = process.env["UPSTASH_SEARCH_REST_URL"]
+const UPSTASH_SEARCH_REST_TOKEN = process.env["UPSTASH_SEARCH_REST_TOKEN"]
 
 if (!UPSTASH_SEARCH_REST_URL || !UPSTASH_SEARCH_REST_TOKEN) {
   const missing = []

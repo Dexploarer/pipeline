@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     if (!validationResult.success) {
       return Response.json(
-        { error: "Invalid request", details: validationResult.error.errors },
+        { error: "Invalid request", details: validationResult.error.issues },
         { status: 400 }
       )
     }
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     const { prompt, category, existingLore, model: customModel, zoneId } = validationResult.data
 
     const context = await buildGenerationContext({
-      zoneId,
+      zoneId: zoneId !== undefined ? String(zoneId) : undefined,
     })
 
     const contextPrompt = formatContextForPrompt(context)

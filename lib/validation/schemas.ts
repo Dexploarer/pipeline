@@ -21,7 +21,7 @@ export const paginationSchema = z.object({
 export const searchSchema = z.object({
   query: z.string().min(1).max(500),
   ...paginationSchema.shape,
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.string(), z.any()).optional(),
 })
 
 // ============================================================================
@@ -53,7 +53,7 @@ export const generateNPCSchema = z.object({
 export const createNPCSchema = z.object({
   name: z.string().min(1).max(255),
   archetype: npcArchetypeSchema,
-  personality: z.record(z.any()),
+  personality: z.record(z.string(), z.any()),
   dialogueStyle: z.string().max(1000).optional(),
   backstory: z.string().max(5000).optional(),
   goals: z.array(z.string()).max(20).optional(),
@@ -64,9 +64,9 @@ export const createNPCSchema = z.object({
     z: z.number().optional(),
     rotation: z.number().optional(),
   }).optional(),
-  behavior: z.record(z.any()).optional(),
-  elizaosConfig: z.record(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
+  behavior: z.record(z.string(), z.any()).optional(),
+  elizaosConfig: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateNPCSchema = createNPCSchema.partial()
@@ -94,7 +94,7 @@ export const questLayerTypeSchema = z.enum([
 export const generateQuestLayerSchema = z.object({
   questTitle: z.string().min(1).max(255),
   layerType: questLayerTypeSchema,
-  existingLayers: z.record(z.any()).optional(),
+  existingLayers: z.record(z.string(), z.any()).optional(),
   zoneId: uuidSchema.optional(),
   relatedNpcIds: z.array(uuidSchema).max(20).optional(),
   model: z.string().optional(),
@@ -109,17 +109,17 @@ export const createQuestSchema = z.object({
     description: z.string(),
     completed: z.boolean().default(false),
   })),
-  rewards: z.record(z.any()).optional(),
-  requirements: z.record(z.any()).optional(),
+  rewards: z.record(z.string(), z.any()).optional(),
+  requirements: z.record(z.string(), z.any()).optional(),
   zoneId: uuidSchema.optional(),
   questGiverNpcId: uuidSchema.optional(),
-  gameflowLayer: z.record(z.any()).optional(),
-  loreLayer: z.record(z.any()).optional(),
-  historyLayer: z.record(z.any()).optional(),
-  relationshipsLayer: z.record(z.any()).optional(),
-  economyLayer: z.record(z.any()).optional(),
-  worldEventsLayer: z.record(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
+  gameflowLayer: z.record(z.string(), z.any()).optional(),
+  loreLayer: z.record(z.string(), z.any()).optional(),
+  historyLayer: z.record(z.string(), z.any()).optional(),
+  relationshipsLayer: z.record(z.string(), z.any()).optional(),
+  economyLayer: z.record(z.string(), z.any()).optional(),
+  worldEventsLayer: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateQuestSchema = createQuestSchema.partial()
@@ -141,9 +141,9 @@ export const dialogueNodeSchema: z.ZodType<any> = z.lazy(() =>
     text: z.string().min(1).max(2000),
     speaker: z.enum(["npc", "player"]),
     responses: z.array(dialogueNodeSchema).optional(),
-    conditions: z.record(z.any()).optional(),
+    conditions: z.record(z.string(), z.any()).optional(),
     actions: z.array(z.string()).optional(),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
   })
 )
 
@@ -160,7 +160,7 @@ export const createDialogueTreeSchema = z.object({
   name: z.string().min(1).max(255),
   npcId: uuidSchema.optional(),
   nodes: z.array(dialogueNodeSchema),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateDialogueTreeSchema = createDialogueTreeSchema.partial()
@@ -199,7 +199,7 @@ export const createLoreSchema = z.object({
   zoneId: uuidSchema.optional(),
   relatedNpcIds: z.array(uuidSchema).optional(),
   relatedQuestIds: z.array(uuidSchema).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateLoreSchema = createLoreSchema.partial()
@@ -236,7 +236,7 @@ export const createZoneSchema = z.object({
   }).optional(),
   parentZoneId: uuidSchema.optional(),
   factions: z.array(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateZoneSchema = createZoneSchema.partial()
@@ -268,7 +268,7 @@ export const createRelationshipSchema = z.object({
   relationshipType: relationshipTypeSchema,
   strength: z.number().int().min(-100).max(100).default(0),
   description: z.string().max(1000).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateRelationshipSchema = createRelationshipSchema.partial().omit({
@@ -301,14 +301,14 @@ export const createContentPackSchema = z.object({
   category: contentPackCategorySchema,
   tags: z.array(z.string()).max(20).optional(),
   zoneIds: z.array(uuidSchema).optional(),
-  actions: z.array(z.record(z.any())).optional(),
-  providers: z.array(z.record(z.any())).optional(),
-  evaluators: z.array(z.record(z.any())).optional(),
-  systems: z.array(z.record(z.any())).optional(),
-  stateManagers: z.array(z.record(z.any())).optional(),
+  actions: z.array(z.record(z.string(), z.any())).optional(),
+  providers: z.array(z.record(z.string(), z.any())).optional(),
+  evaluators: z.array(z.record(z.string(), z.any())).optional(),
+  systems: z.array(z.record(z.string(), z.any())).optional(),
+  stateManagers: z.array(z.record(z.string(), z.any())).optional(),
   dependencies: z.array(z.string()).optional(),
-  compatibility: z.record(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
+  compatibility: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const updateContentPackSchema = createContentPackSchema.partial()
@@ -325,10 +325,10 @@ export const listContentPacksSchema = z.object({
 // ============================================================================
 
 export const simulateInteractionSchema = z.object({
-  npcScript: z.record(z.any()),
+  npcScript: z.record(z.string(), z.any()),
   playerInput: z.string().min(1).max(1000),
   sessionId: uuidSchema.optional(),
-  context: z.record(z.any()).optional(),
+  context: z.record(z.string(), z.any()).optional(),
 })
 
 // ============================================================================
@@ -361,7 +361,7 @@ export const uploadAssetSchema = z.object({
   zoneId: uuidSchema.optional(),
   questId: uuidSchema.optional(),
   contentPackId: uuidSchema.optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const listAssetsSchema = z.object({
@@ -427,7 +427,7 @@ export function formatValidationErrors(errors: z.ZodError): Array<{
   field: string
   message: string
 }> {
-  return errors.errors.map(err => ({
+  return errors.issues.map(err => ({
     field: err.path.join("."),
     message: err.message,
   }))
