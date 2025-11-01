@@ -43,12 +43,26 @@ function getStackApp(): StackServerApp | null {
 // Development Mode User
 // ============================================================================
 
-const DEV_USER: User = {
-  id: "user_dev_00000000",
-  email: "dev@localhost",
-  name: "Development User",
-  role: "admin",
-  createdAt: new Date(),
+// SECURITY: This dev user is ONLY for local development
+// Runtime check ensures it never works in production
+function getDevUser(): User {
+  // Triple check: NODE_ENV, VERCEL_ENV, and explicit production check
+  const isProduction =
+    process.env["NODE_ENV"] === "production" ||
+    process.env["VERCEL_ENV"] === "production" ||
+    process.env["NEXT_PUBLIC_VERCEL_ENV"] === "production"
+
+  if (isProduction) {
+    throw new Error("DEV_USER cannot be used in production environment")
+  }
+
+  return {
+    id: "user_dev_00000000",
+    email: "dev@localhost",
+    name: "Development User",
+    role: "admin",
+    createdAt: new Date(),
+  }
 }
 
 // ============================================================================
@@ -62,7 +76,7 @@ const DEV_USER: User = {
 export async function getCurrentUser(): Promise<User | null> {
   // Development mode: return mock user (only in non-production environments)
   if (process.env["NODE_ENV"] === "development" && process.env["VERCEL_ENV"] !== "production") {
-    return DEV_USER
+    return getDevUser()
   }
 
   const stackApp = getStackApp()
@@ -122,7 +136,7 @@ export async function getUserFromRequest(authHeader: string | null): Promise<Use
   // Development mode: accept any Bearer token (only in non-production environments)
   if (process.env["NODE_ENV"] === "development" && process.env["VERCEL_ENV"] !== "production") {
     if (authHeader.startsWith("Bearer ")) {
-      return DEV_USER
+      return getDevUser()
     }
     return null
   }
