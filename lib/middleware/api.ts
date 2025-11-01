@@ -86,12 +86,12 @@ export function createApiHandler(
         tracker.checkpoint("auth_complete")
       }
 
-      // Rate limiting (placeholder - integrate with your rate limit system)
+      // Rate limiting
       if (options.rateLimit) {
-        const allowed = await checkRateLimit(req, options.rateLimit)
+        const allowed = await checkRateLimitMiddleware(req, options.rateLimit, apiContext.userId)
         if (!allowed) {
           return NextResponse.json(
-            { error: "Rate limit exceeded" },
+            { error: "Rate limit exceeded. Please try again later." },
             { status: 429 }
           )
         }
@@ -190,45 +190,55 @@ async function validateRequestData(
 }
 
 // ============================================================================
-// Authentication Placeholder
+// Authentication Implementation
 // ============================================================================
 
 async function authenticate(req: NextRequest): Promise<string | null> {
-  // TODO: Implement actual authentication
-  // This is a placeholder - integrate with Auth0, Supabase, NextAuth, etc.
+  const { getUserFromRequest } = await import("../auth/session")
 
   const authHeader = req.headers.get("authorization")
   if (!authHeader) {
     return null
   }
 
-  // For now, just extract from Bearer token
-  // In production, verify the token signature and extract user ID
-  const token = authHeader.replace("Bearer ", "")
-  if (!token) {
+  try {
+    const user = await getUserFromRequest(authHeader)
+    return user?.id || null
+  } catch (error) {
+    logger.error("Authentication failed", error as Error)
     return null
   }
-
-  // Placeholder: return mock user ID
-  return "user_" + token.substring(0, 8)
 }
 
 // ============================================================================
-// Rate Limiting Placeholder
+// Rate Limiting Implementation
 // ============================================================================
 
-async function checkRateLimit(
-  _req: NextRequest,
-  _config: { requests: number; window: number }
+async function checkRateLimitMiddleware(
+  req: NextRequest,
+  config: { requests: number; window: number },
+  userId?: string
 ): Promise<boolean> {
-  // TODO: Implement actual rate limiting with Redis
-  // This is a placeholder
+  const { checkRateLimit: checkLimit } = await import("../cache/rate-limit")
 
-  // Example implementation would be:
-  // const identifier = req.headers.get("x-forwarded-for") || "anonymous"
-  // return await checkRateLimit(identifier, config.requests, config.window)
+  // Identify user by:
+  // 1. User ID if authenticated (passed as parameter)
+  // 2. IP address from headers
+  // 3. Default to "anonymous"
+  const forwardedFor = req.headers.get("x-forwarded-for")
+  const realIp = req.headers.get("x-real-ip")
+  const ip = forwardedFor?.split(",")[0]?.trim() || realIp || "unknown"
 
-  return true // Allow all requests for now
+  const identifier = userId || `ip:${ip}`
+
+  try {
+    const result = await checkLimit(identifier, config)
+    return result.allowed
+  } catch (error) {
+    logger.error("Rate limit check failed", error as Error, { identifier })
+    // Fail open - allow request if check fails
+    return true
+  }
 }
 
 // ============================================================================
