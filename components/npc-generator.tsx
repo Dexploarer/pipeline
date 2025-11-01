@@ -34,15 +34,42 @@ export function NPCGenerator(): React.ReactElement {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to generate NPC")
+        // Parse error from API
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.message || "Failed to generate NPC"
+
+        // Handle specific error codes with user-friendly messages
+        if (response.status === 429) {
+          toast.error("Rate limit exceeded. Please wait a moment and try again.")
+        } else if (response.status === 400) {
+          toast.error(`Invalid request: ${errorMessage}`)
+        } else if (response.status === 500) {
+          toast.error("Server error. Using fallback template instead.")
+        } else if (response.status === 413) {
+          toast.error("Request too large. Please reduce the prompt length.")
+        } else {
+          toast.error(errorMessage)
+        }
+
+        throw new Error(errorMessage)
       }
 
       const script = await response.json()
       setGeneratedScript(script)
-      toast.success("NPC generated successfully!")
+
+      // Show different message for cached vs fresh generation
+      if (script.cached) {
+        toast.success("NPC generated successfully (from cache)!")
+      } else {
+        toast.success("NPC generated successfully!")
+      }
     } catch (error) {
-      console.error("[v0] Generation error:", error)
-      toast.error("Failed to generate NPC, using fallback data")
+      console.error("Generation error:", error)
+
+      // Handle network errors specifically
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        toast.error("Network error. Using fallback template instead.")
+      }
 
       const baseTemplate = NPC_TEMPLATES[template]
 
