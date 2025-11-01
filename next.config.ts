@@ -49,7 +49,10 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://openrouter.ai https://*.vercel.app https://*.upstash.io;",
+            // More secure CSP without 'unsafe-eval' and 'unsafe-inline' in script-src
+            // Note: 'unsafe-inline' is kept for style-src as Tailwind CSS requires it
+            // TODO: Implement nonce-based CSP for even better security
+            value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://openrouter.ai https://*.vercel.app https://*.upstash.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;",
           },
         ],
       },

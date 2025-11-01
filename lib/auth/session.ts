@@ -60,8 +60,8 @@ const DEV_USER: User = {
  * Returns development user in dev mode, or fetches from Stack Auth in production
  */
 export async function getCurrentUser(): Promise<User | null> {
-  // Development mode: return mock user
-  if (process.env["NODE_ENV"] === "development") {
+  // Development mode: return mock user (only in non-production environments)
+  if (process.env["NODE_ENV"] === "development" && process.env["VERCEL_ENV"] !== "production") {
     return DEV_USER
   }
 
@@ -77,11 +77,14 @@ export async function getCurrentUser(): Promise<User | null> {
       return null
     }
 
+    // Fetch role from Stack Auth metadata, default to least privileged role
+    const role = (stackUser.serverMetadata?.role || stackUser.clientMetadata?.role) as User["role"]
+
     return {
       id: stackUser.id,
       email: stackUser.primaryEmail || "",
       name: stackUser.displayName || undefined,
-      role: "creator", // Default role - enhance this based on your Stack Auth setup
+      role: role || "viewer", // Default to least privileged role for security
       createdAt: new Date(stackUser.createdAt || Date.now()),
     }
   } catch (error) {
@@ -116,8 +119,8 @@ export async function getUserFromRequest(authHeader: string | null): Promise<Use
     return null
   }
 
-  // Development mode: accept any Bearer token
-  if (process.env["NODE_ENV"] === "development") {
+  // Development mode: accept any Bearer token (only in non-production environments)
+  if (process.env["NODE_ENV"] === "development" && process.env["VERCEL_ENV"] !== "production") {
     if (authHeader.startsWith("Bearer ")) {
       return DEV_USER
     }
@@ -142,11 +145,14 @@ export async function getUserFromRequest(authHeader: string | null): Promise<Use
       return null
     }
 
+    // Fetch role from Stack Auth metadata, default to least privileged role
+    const role = (stackUser.serverMetadata?.role || stackUser.clientMetadata?.role) as User["role"]
+
     return {
       id: stackUser.id,
       email: stackUser.primaryEmail || "",
       name: stackUser.displayName || undefined,
-      role: "creator",
+      role: role || "viewer", // Default to least privileged role for security
       createdAt: new Date(stackUser.createdAt || Date.now()),
     }
   } catch (error) {

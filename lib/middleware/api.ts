@@ -88,7 +88,7 @@ export function createApiHandler(
 
       // Rate limiting
       if (options.rateLimit) {
-        const allowed = await checkRateLimitMiddleware(req, options.rateLimit)
+        const allowed = await checkRateLimitMiddleware(req, options.rateLimit, apiContext.userId)
         if (!allowed) {
           return NextResponse.json(
             { error: "Rate limit exceeded. Please try again later." },
@@ -216,15 +216,15 @@ async function authenticate(req: NextRequest): Promise<string | null> {
 
 async function checkRateLimitMiddleware(
   req: NextRequest,
-  config: { requests: number; window: number }
+  config: { requests: number; window: number },
+  userId?: string
 ): Promise<boolean> {
   const { checkRateLimit: checkLimit } = await import("../cache/rate-limit")
 
   // Identify user by:
-  // 1. User ID if authenticated
+  // 1. User ID if authenticated (passed as parameter)
   // 2. IP address from headers
   // 3. Default to "anonymous"
-  const userId = req.headers.get("x-user-id")
   const forwardedFor = req.headers.get("x-forwarded-for")
   const realIp = req.headers.get("x-real-ip")
   const ip = forwardedFor?.split(",")[0]?.trim() || realIp || "unknown"

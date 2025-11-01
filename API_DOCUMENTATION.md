@@ -146,7 +146,7 @@ POST /api/generate-dialogue
 ```json
 {
   "context": "Initial meeting with quest giver",
-  "npcId": "npc_1234567890",
+  "npcId": "550e8400-e29b-41d4-a716-446655440000",
   "maxDepth": 3,
   "branchingFactor": 3
 }
@@ -179,7 +179,7 @@ POST /api/generate-quest-layer
   "layerType": "gameflow",
   "existingLayers": {},
   "zoneId": "550e8400-e29b-41d4-a716-446655440000",
-  "relatedNpcIds": ["npc_123", "npc_456"]
+  "relatedNpcIds": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"]
 }
 ```
 
@@ -248,9 +248,9 @@ POST /api/simulate-interaction
 {
   "npcScript": { ... },
   "playerInput": "Hello, how are you today?",
-  "sessionId": "session_123",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440000",
   "context": {
-    "questsCompleted": ["quest_1"],
+    "questsCompleted": ["550e8400-e29b-41d4-a716-446655440001"],
     "relationship": 50
   }
 }
