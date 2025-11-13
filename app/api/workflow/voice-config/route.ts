@@ -42,31 +42,19 @@ export async function POST(req: NextRequest) {
       voiceConfig
     )
 
-    // Optionally create a conversational agent for this NPC
-    let agent
-    if (npcData.backstory) {
-      agent = await client.createNPCAgent({
-        name: npcData.name,
-        personality: npcData.personality,
-        backstory: npcData.backstory,
-        dialogueStyle: 'Immersive and character-appropriate',
-        voiceId: selectedVoiceId,
-      })
-    }
+    // Note: For conversational AI agents, use the /api/agents endpoints instead
+    // NPCs only get voice generation, not conversational streaming
 
     return NextResponse.json({
       success: true,
       voiceId: selectedVoiceId,
       voiceConfig,
-      agent: agent ? {
-        agentId: agent.agent_id,
-        url: `https://elevenlabs.io/app/conversational-ai/agent/${agent.agent_id}`,
-      } : undefined,
       preview: {
         sampleText: preview.sampleText,
         // Note: In production, you'd upload the audio buffer to storage and return a URL
         audioAvailable: true,
       },
+      message: 'Voice configuration created. NPCs use static voice generation only. For conversational AI, create game-playing agents at /agents.',
     })
   } catch (error) {
     console.error('Voice configuration error:', error)
