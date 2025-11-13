@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
   try {
     const sessionId = req.nextUrl.searchParams.get('sessionId')
     const eventTypes = req.nextUrl.searchParams.get('eventTypes')?.split(',')
-    const limit = parseInt(req.nextUrl.searchParams.get('limit') || '50')
+    const rawLimit = req.nextUrl.searchParams.get('limit')
+    const requestedLimit = rawLimit ? Number.parseInt(rawLimit, 10) : 50
+    const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 50
 
     if (!sessionId) {
       return NextResponse.json(

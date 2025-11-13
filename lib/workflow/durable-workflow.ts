@@ -6,6 +6,26 @@ import type { WorkflowContext, NodeExecutionResult } from './types'
  * Handles long-running NPC generation pipelines with automatic retries and state persistence
  */
 
+// API base URL configuration
+const getApiBaseUrl = () => {
+  // In production, use NEXT_PUBLIC_API_URL or VERCEL_URL
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  // Local development fallback
+  return 'http://localhost:3000'
+}
+
+const buildApiUrl = (path: string): string => {
+  const baseUrl = getApiBaseUrl()
+  return new URL(path, baseUrl).toString()
+}
+
 interface NPCGenerationInput {
   prompt: string
   archetype?: string
@@ -52,7 +72,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
     const personality = await context.run('generate-personality', async () => {
       console.log('🎭 Generating NPC personality...')
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/generate-npc-v2`, {
+      const response = await fetch(buildApiUrl('/api/generate-npc-v2'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -76,7 +96,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
     const questHooks = await context.run('generate-quest-hooks', async () => {
       console.log('🎯 Generating quest hooks...')
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/generate-quest-layer`, {
+      const response = await fetch(buildApiUrl('/api/generate-quest-layer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,7 +119,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
     const dialoguePatterns = await context.run('generate-dialogue', async () => {
       console.log('💬 Generating dialogue patterns...')
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/generate-dialogue`, {
+      const response = await fetch(buildApiUrl('/api/generate-dialogue'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,7 +144,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
       voiceResult = await context.run('configure-voice', async () => {
         console.log('🎤 Configuring ElevenLabs voice...')
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/workflow/voice-config`, {
+        const response = await fetch(buildApiUrl('/api/workflow/voice-config'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -160,7 +180,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
           voice: voiceResult,
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/workflow/export`, {
+        const response = await fetch(buildApiUrl('/api/workflow/export'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -185,7 +205,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
       console.log('💾 Storing workflow results...')
 
       // Store the complete NPC package
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/workflow/store`, {
+      const response = await fetch(buildApiUrl('/api/workflow/store'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -238,7 +258,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
       })
 
       // Log failure to monitoring system
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/workflow/failure`, {
+      await fetch(buildApiUrl('/api/workflow/failure'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -272,7 +292,7 @@ export const batchNPCGenerationWorkflow = serve<{ npcs: NPCGenerationInput[] }>(
         console.log(`📝 Generating NPC ${i + 1}/${npcs.length}`)
 
         // Trigger the individual NPC workflow
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/workflow/execute`, {
+        const response = await fetch(buildApiUrl('/api/workflow/execute'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(npcInput),

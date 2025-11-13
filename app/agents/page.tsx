@@ -122,24 +122,40 @@ export default function AgentsPage() {
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
+      let buffer = ''
 
       while (true) {
         const { done, value } = await reader.read()
 
         if (done) break
 
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
+        buffer += decoder.decode(value, { stream: true })
 
-        for (const line of lines) {
+        let newlineIndex
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, newlineIndex).trim()
+          buffer = buffer.slice(newlineIndex + 1)
+
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6))
               setStreamMessages((prev) => [...prev, data])
-            } catch (e) {
-              // Skip invalid JSON
+            } catch {
+              // Wait for the remainder of the JSON payload
             }
           }
+        }
+      }
+
+      // Process any remaining data in buffer
+      buffer += decoder.decode()
+      const finalLine = buffer.trim()
+      if (finalLine.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(finalLine.slice(6))
+          setStreamMessages((prev) => [...prev, data])
+        } catch {
+          // Trailing partial JSON can be ignored
         }
       }
 
@@ -608,9 +624,9 @@ export default function AgentsPage() {
                 <CardTitle className="text-sm font-medium">Total Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{sessionStats?.totalActions || 0}</div>
+                <div className="text-2xl font-bold">{sessionStats?.totalActions ?? 0}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {sessionStats?.actionsPerMinute.toFixed(1) || 0} per minute
+                  {sessionStats?.actionsPerMinute?.toFixed(1) ?? '0.0'} per minute
                 </p>
               </CardContent>
             </Card>
@@ -620,9 +636,9 @@ export default function AgentsPage() {
                 <CardTitle className="text-sm font-medium">Total Reward</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{sessionStats?.totalReward.toFixed(1) || 0}</div>
+                <div className="text-2xl font-bold">{sessionStats?.totalReward?.toFixed(1) ?? '0.0'}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Avg: {sessionStats?.averageReward.toFixed(2) || 0}
+                  Avg: {sessionStats?.averageReward?.toFixed(2) ?? '0.00'}
                 </p>
               </CardContent>
             </Card>

@@ -6,7 +6,14 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 // Store active sessions (in production, use Redis or database)
-const activeSessions = new Map<string, GameAgentEngine>()
+declare global {
+  var agentSessions: Map<string, GameAgentEngine> | undefined
+}
+
+const activeSessions = globalThis.agentSessions || new Map<string, GameAgentEngine>()
+if (!globalThis.agentSessions) {
+  globalThis.agentSessions = activeSessions
+}
 
 /**
  * Initialize a new agent session
@@ -88,7 +95,7 @@ export async function GET(req: NextRequest) {
         id: session?.id,
         status: session?.status,
         gameState: session?.gameState,
-        actionHistory: session?.actionHistory.slice(-10), // Last 10 actions
+        actionHistory: session?.actionHistory?.slice(-10) ?? [], // Last 10 actions
         totalReward: session?.totalReward,
         statistics,
       },

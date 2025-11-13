@@ -144,8 +144,8 @@ You are ${personality.name}, an AI agent playing a game.
 
 **Traits:** ${personality.traits.join(', ')}
 **Play Style:** ${personality.playStyle}
-**Primary Goal:** ${personality.primaryGoal}
-**Secondary Goals:** ${personality.secondaryGoals.join(', ')}
+**Primary Goal:** ${personality.goals.primaryGoal}
+**Secondary Goals:** ${personality.goals.secondaryGoals.join(', ')}
 
 ## Decision Making Preferences
 - Risk Tolerance: ${personality.preferences.riskTolerance * 100}%

@@ -157,7 +157,14 @@ export class EventDrivenAgentEngine {
       const contexts = await this.providers.getAllContexts(this.state.sessionId)
 
       // 2. Select appropriate template
-      const currentGameState = await this.providers.get('gameState')?.get(this.state.sessionId)
+      // Get the actual GameState from the provider's context XML
+      const gameStateProvider = this.providers.get('gameState')
+      const gameStateContext = gameStateProvider
+        ? await gameStateProvider.get(this.state.sessionId)
+        : undefined
+      const currentGameState = gameStateContext
+        ? this.reconstructGameState(this.eventLogger.parseXML(gameStateContext.xml))
+        : undefined
       const templateName = selectTemplate(
         currentGameState,
         this.state.eventLog.slice(-10)
@@ -235,8 +242,14 @@ export class EventDrivenAgentEngine {
           timestamp: new Date(),
         }
 
-        // Log thought
-        this.eventLogger.logThought(this.state.sessionId, chunk)
+        // Log thought and persist to event log
+        const thoughtEvent = this.eventLogger.logThought(this.state.sessionId, chunk)
+        this.state.eventLog.push(thoughtEvent)
+
+        // Keep event log manageable
+        if (this.state.eventLog.length > 100) {
+          this.state.eventLog = this.state.eventLog.slice(-50)
+        }
       }
 
       // 7. Execute tool calls
@@ -507,6 +520,12 @@ export class EventDrivenAgentEngine {
   private reconstructGameState(xmlData: any): GameState {
     const event = xmlData.event || xmlData.context
 
+    // Helper to ensure array from XML (fast-xml-parser returns object for single items)
+    const ensureArray = (value: any): any[] => {
+      if (!value) return []
+      return Array.isArray(value) ? value : [value]
+    }
+
     return {
       sessionId: this.state?.sessionId || '',
       environment: event.environment || 'Unknown',
@@ -515,24 +534,20 @@ export class EventDrivenAgentEngine {
         y: parseFloat(event.position?.['@_y']) || 0,
         z: parseFloat(event.position?.['@_z']) || 0,
       },
-      visibleEntities: Array.isArray(event.visibleEntities?.entity)
-        ? event.visibleEntities.entity.map((e: any) => ({
-            id: e['@_id'],
-            type: e['@_type'],
-            position: {
-              x: parseFloat(e['@_x']) || 0,
-              y: parseFloat(e['@_y']) || 0,
-            },
-            properties: {},
-          }))
-        : [],
-      inventory: Array.isArray(event.inventory?.item)
-        ? event.inventory.item.map((i: any) => ({
-            id: i['@_id'],
-            name: i['@_name'],
-            quantity: parseInt(i['@_quantity']) || 1,
-          }))
-        : [],
+      visibleEntities: ensureArray(event.visibleEntities?.entity).map((e: any) => ({
+        id: e['@_id'],
+        type: e['@_type'],
+        position: {
+          x: parseFloat(e['@_x']) || 0,
+          y: parseFloat(e['@_y']) || 0,
+        },
+        properties: {},
+      })),
+      inventory: ensureArray(event.inventory?.item).map((i: any) => ({
+        id: i['@_id'],
+        name: i['@_name'],
+        quantity: parseInt(i['@_quantity']) || 1,
+      })),
       stats: event.stats || {},
       activeQuests: [],
       availableActions: ['move', 'interact', 'attack', 'use_item', 'speak'],

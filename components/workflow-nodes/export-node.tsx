@@ -4,7 +4,7 @@ import React from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
-import { Download, Package } from 'lucide-react'
+import { Download, Package, Mic } from 'lucide-react'
 
 interface ExportNodeData {
   label: string
