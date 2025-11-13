@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Sparkles, Workflow, Mic2, Download, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { Sparkles, Workflow, Mic2, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import type { Node, Edge } from '@xyflow/react'
 
 interface ExecutionResult {

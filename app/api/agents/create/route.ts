@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function generateSystemPrompt(name: string, playStyle: string, goals: any): string {
+function generateSystemPrompt(name: string, playStyle: string, _goals: any): string {
   return `You are ${name}, an advanced AI agent designed to play games autonomously.
 
 Your play style is ${playStyle}, which means you should make decisions that align with this approach.

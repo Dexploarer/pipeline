@@ -17,6 +17,8 @@ import {
   MessageSquare,
   Map,
   ChevronRight,
+  Workflow,
+  Bot,
 } from "lucide-react"
 
 interface NavItem {
@@ -26,6 +28,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { value: "workflows", label: "Workflow Builder", icon: Workflow },
+  { value: "ai-agents", label: "AI Agents", icon: Bot },
   { value: "generator", label: "AI Generator", icon: Sparkles },
   { value: "quest-builder", label: "Quest Builder", icon: Layers },
   { value: "lore", label: "Lore Manager", icon: BookOpen },

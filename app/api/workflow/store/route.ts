@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sql } from '@neondatabase/serverless'
-import { neon } from '@/lib/db/client'
+import { neon } from '@neondatabase/serverless'
 
 export const runtime = 'edge'
 export const maxDuration = 30
@@ -17,7 +16,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const client = neon(process.env.DATABASE_URL!)
+    // Check if DATABASE_URL is configured
+    if (!process.env['DATABASE_URL']) {
+      console.warn('DATABASE_URL not configured. Skipping workflow storage.')
+      return NextResponse.json({
+        success: true,
+        warning: 'Database not configured - workflow not stored',
+      })
+    }
+
+    const client = neon(process.env['DATABASE_URL'])
 
     // Store workflow execution results
     // Note: You may need to create a workflows table in your database schema
@@ -44,7 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       workflowRunId,
-      storedId: result[0]?.id,
+      storedId: result[0]?.['id'],
     })
   } catch (error) {
     console.error('Workflow storage error:', error)

@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Bot,
   Play,
@@ -350,7 +349,7 @@ export default function AgentsPage() {
                           ...agentConfig.personality!,
                           preferences: {
                             ...agentConfig.personality!.preferences,
-                            riskTolerance: value / 100,
+                            riskTolerance: (value ?? 50) / 100,
                           },
                         },
                       })
@@ -371,7 +370,7 @@ export default function AgentsPage() {
                           ...agentConfig.personality!,
                           preferences: {
                             ...agentConfig.personality!.preferences,
-                            explorationVsExploitation: value / 100,
+                            explorationVsExploitation: (value ?? 50) / 100,
                           },
                         },
                       })
@@ -392,7 +391,7 @@ export default function AgentsPage() {
                           ...agentConfig.personality!,
                           preferences: {
                             ...agentConfig.personality!.preferences,
-                            socialInteraction: value / 100,
+                            socialInteraction: (value ?? 50) / 100,
                           },
                         },
                       })
@@ -413,7 +412,7 @@ export default function AgentsPage() {
                           ...agentConfig.personality!,
                           preferences: {
                             ...agentConfig.personality!.preferences,
-                            completionismLevel: value / 100,
+                            completionismLevel: (value ?? 50) / 100,
                           },
                         },
                       })

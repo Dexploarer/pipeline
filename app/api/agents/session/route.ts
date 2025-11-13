@@ -164,7 +164,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 // Cleanup function to remove old sessions (call periodically)
-export function cleanupOldSessions() {
+// Note: Not exported as it's not a valid Next.js route handler
+function cleanupOldSessions() {
   const now = Date.now()
   for (const [sessionId, engine] of activeSessions.entries()) {
     const session = engine.getSession()
@@ -173,4 +174,9 @@ export function cleanupOldSessions() {
       activeSessions.delete(sessionId)
     }
   }
+}
+
+// Run cleanup on module load (in production, use a cron job)
+if (typeof setInterval !== 'undefined') {
+  setInterval(cleanupOldSessions, 3600000) // Every hour
 }

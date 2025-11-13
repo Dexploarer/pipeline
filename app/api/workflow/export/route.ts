@@ -17,19 +17,19 @@ export async function POST(req: NextRequest) {
     for (const format of exportConfig.formats) {
       switch (format) {
         case 'unity':
-          exports.unity = formatForUnity(workflowResults)
+          exports['unity'] = formatForUnity(workflowResults)
           break
         case 'unreal':
-          exports.unreal = formatForUnreal(workflowResults)
+          exports['unreal'] = formatForUnreal(workflowResults)
           break
         case 'godot':
-          exports.godot = formatForGodot(workflowResults)
+          exports['godot'] = formatForGodot(workflowResults)
           break
         case 'elizaos':
-          exports.elizaos = formatForElizaOS(workflowResults)
+          exports['elizaos'] = formatForElizaOS(workflowResults)
           break
         case 'json':
-          exports.json = workflowResults
+          exports['json'] = workflowResults
           break
         default:
           console.warn(`Unknown export format: ${format}`)
