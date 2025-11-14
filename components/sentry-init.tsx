@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import { initSentry } from "@/lib/monitoring/sentry"
 
 /**
  * Sentry Initialization Component
@@ -10,8 +9,15 @@ import { initSentry } from "@/lib/monitoring/sentry"
  */
 export function SentryInit(): null {
   useEffect(() => {
-    // Initialize Sentry only once on client mount
-    initSentry()
+    // Dynamic import to avoid build-time dependency on @sentry/nextjs
+    import("@/lib/monitoring/sentry")
+      .then(({ initSentry }) => {
+        initSentry()
+      })
+      .catch((error) => {
+        // Silently fail if Sentry module is not available
+        console.log("Sentry monitoring not available:", error.message)
+      })
   }, [])
 
   return null

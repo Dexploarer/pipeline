@@ -1,11 +1,14 @@
 "use client"
 
 import { Suspense, lazy, useState } from "react"
-import { Sparkles } from "lucide-react"
+import Link from "next/link"
+import { Sparkles, Workflow, Bot, ArrowRight } from "lucide-react"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { LoadingSkeleton } from "@/components/loading-skeleton"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { SidebarNav } from "@/components/sidebar-nav"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const NPCGenerator = lazy(() => import("@/components/npc-generator").then((mod) => ({ default: mod.NPCGenerator })))
 const NPCSimulator = lazy(() => import("@/components/npc-simulator").then((mod) => ({ default: mod.NPCSimulator })))
@@ -42,7 +45,7 @@ const ContentPackManager = lazy(() =>
 )
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("generator")
+  const [activeTab, setActiveTab] = useState("workflows")
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,13 +57,13 @@ export default function Home() {
                 <Sparkles className="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">NPC Content Pipeline</h1>
-                <p className="text-xs text-muted-foreground">AI-Powered Game Content Generation</p>
+                <h1 className="text-xl font-bold text-foreground">AI Game Development Platform</h1>
+                <p className="text-xs text-muted-foreground">Workflows, Agents & Content Generation</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <span className="text-sm text-muted-foreground font-mono">v2.1.0</span>
+              <span className="text-sm text-muted-foreground font-mono">v3.0.0</span>
             </div>
           </div>
         </div>
@@ -69,6 +72,139 @@ export default function Home() {
       <SidebarNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="pt-[89px] px-8 pb-12 container mx-auto max-w-7xl">
+        {/* Workflow Builder Tab */}
+        {activeTab === "workflows" && (
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-foreground">Visual Workflow Builder</h2>
+              <p className="text-base text-muted-foreground">
+                Create durable workflows with React Flow, combine AI generation, voice synthesis, and game integration
+              </p>
+            </div>
+            <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm shadow-lg border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Workflow className="h-6 w-6 text-primary" />
+                  Workflow Studio
+                </CardTitle>
+                <CardDescription>
+                  Design visual workflows with custom nodes for AI generation, voice configuration, and multi-format export.
+                  Powered by React Flow, Workflow DevKit (durable execution), and ElevenLabs API.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">Visual Node Editor</h4>
+                    <p className="text-sm text-muted-foreground">Drag-and-drop workflow building with custom node types</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">Durable Execution</h4>
+                    <p className="text-sm text-muted-foreground">State persistence and resume capability for long workflows</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">Multi-format Export</h4>
+                    <p className="text-sm text-muted-foreground">Export to Unity, Unreal, Godot, or ElizaOS</p>
+                  </div>
+                </div>
+                <Link href="/workflow-studio">
+                  <Button className="w-full" size="lg">
+                    Open Workflow Studio <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* AI Agents Tab */}
+        {activeTab === "ai-agents" && (
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-foreground">AI Game-Playing Agents</h2>
+              <p className="text-base text-muted-foreground">
+                Event-driven autonomous agents with XML logging, providers, evaluators, and template-based prompts
+              </p>
+            </div>
+            <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm shadow-lg border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-6 w-6 text-primary" />
+                  Event-Driven Agent System (ElizaOS-Inspired)
+                </CardTitle>
+                <CardDescription>
+                  Create AI agents that autonomously play games, make decisions, and learn from experience using an event-driven
+                  architecture with XML logs, provider context injection, and evaluator-based learning.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">XML Event Logging</h4>
+                    <p className="text-sm text-muted-foreground">Complete auditability with structured XML logs</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">Provider System</h4>
+                    <p className="text-sm text-muted-foreground">5 providers inject context (game state, memory, goals, etc.)</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">Evaluator Learning</h4>
+                    <p className="text-sm text-muted-foreground">5 evaluators extract insights and store learnings</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <h4 className="font-semibold mb-2">Template Prompts</h4>
+                    <p className="text-sm text-muted-foreground">6 templates for different scenarios (combat, social, etc.)</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Link href="/agents">
+                    <Button className="w-full" size="lg">
+                      Open Agent Dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Streaming decision-making • Tool calling • Autonomous gameplay • Memory system
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Architecture Highlights</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>• Event-driven design with XML message passing</li>
+                    <li>• Provider pattern for context injection</li>
+                    <li>• Evaluator pattern for post-action learning</li>
+                    <li>• Template-based prompt compilation</li>
+                    <li>• Server-Sent Events for real-time streaming</li>
+                    <li>• 8 game action tools (move, interact, attack, etc.)</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Agent Capabilities</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>• Autonomous decision-making with streaming</li>
+                    <li>• Multi-step reasoning with tool calling</li>
+                    <li>• Memory system for knowledge retention</li>
+                    <li>• Personality configuration (risk, exploration, social)</li>
+                    <li>• XML log export for analysis</li>
+                    <li>• Session management (pause, resume, control)</li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
         {/* Generator Tab */}
         {activeTab === "generator" && (
           <div className="space-y-8">

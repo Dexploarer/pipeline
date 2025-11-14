@@ -13,8 +13,8 @@ const envSchema = z.object({
   // Node Environment
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 
-  // Database (required)
-  DATABASE_URL: z.string().url().min(1, "DATABASE_URL is required"),
+  // Database (optional - only required for NPC Content Pipeline features)
+  DATABASE_URL: z.string().url().optional(),
   POSTGRES_URL: z.string().url().optional(),
   DATABASE_URL_UNPOOLED: z.string().url().optional(),
 
@@ -76,6 +76,11 @@ export function validateEnv(): z.infer<typeof envSchema> {
   }
 
   // Warnings for optional but recommended variables
+  if (!parsed.data.DATABASE_URL) {
+    console.warn("⚠️  Database not configured - NPC Content Pipeline features will be limited")
+    console.warn("   Set DATABASE_URL for full NPC content generation, lore management, etc.")
+  }
+
   if (!parsed.data.KV_REST_API_URL || !parsed.data.KV_REST_API_TOKEN) {
     console.warn("⚠️  Redis cache not configured - AI generation results will not be cached")
     console.warn("   Set KV_REST_API_URL and KV_REST_API_TOKEN for better performance")

@@ -6,19 +6,14 @@ import { getCachedAIGeneration, cacheAIGeneration } from "@/lib/cache/patterns"
 import { CacheTiers, generateHash } from "@/lib/cache/strategy"
 import {
   makeNPCPersonalityPrompt,
-  makeNPCPersonalityStop,
   parseNPCPersonalityResponse,
   makeNPCQuestPrompt,
-  makeNPCQuestStop,
   parseNPCQuestResponse,
   makeNPCDialoguePrompt,
-  makeNPCDialogueStop,
   parseNPCDialogueResponse,
   makeNPCRelationshipPrompt,
-  makeNPCRelationshipStop,
   parseNPCRelationshipResponse,
   makeNPCBehaviorPrompt,
-  makeNPCBehaviorStop,
   parseNPCBehaviorResponse,
 } from "@/lib/ai/npc-prompts"
 
@@ -76,7 +71,6 @@ export async function POST(request: Request) {
       const result = await generateText({
         model: selectedModel,
         prompt: makeNPCPersonalityPrompt(archetype, prompt, contextPrompt),
-        maxTokens: 500,
         temperature: 0.8,
       })
       personalityResult = parseNPCPersonalityResponse(result.text)
@@ -100,7 +94,6 @@ export async function POST(request: Request) {
           personalityResult.archetype,
           personalityResult.backstory
         ),
-        maxTokens: 600,
         temperature: 0.7,
       })
       questResult = parseNPCQuestResponse(result.text)
@@ -125,7 +118,6 @@ export async function POST(request: Request) {
           personalityResult.traits.join(", "),
           personalityResult.backstory
         ),
-        maxTokens: 400,
         temperature: 0.7,
       })
       const greetingDialogue = parseNPCDialogueResponse(greetingResult.text)
@@ -139,7 +131,6 @@ export async function POST(request: Request) {
           `Offering quest: ${questResult.title}`,
           personalityResult.backstory
         ),
-        maxTokens: 400,
         temperature: 0.7,
       })
       const questOfferDialogue = parseNPCDialogueResponse(questOfferResult.text)
@@ -156,7 +147,7 @@ export async function POST(request: Request) {
 
     // ===== STAGE 4: RELATIONSHIPS =====
     console.log("[NPC-V2] Stage 4: Generating relationships...")
-    let relationships = []
+    let relationships: any[] = []
     try {
       const contextNPCs = context.npcs?.map((npc) => `"${npc.name}" (${npc.archetype})`) || []
       const result = await generateText({
@@ -167,7 +158,6 @@ export async function POST(request: Request) {
           personalityResult.backstory,
           contextNPCs
         ),
-        maxTokens: 400,
         temperature: 0.7,
       })
       console.log("[NPC-V2] Stage 4 raw response:", result.text.substring(0, 200))
@@ -190,7 +180,6 @@ export async function POST(request: Request) {
           personalityResult.archetype,
           personalityResult.traits.join(", ")
         ),
-        maxTokens: 500,
         temperature: 0.7,
       })
       console.log("[NPC-V2] Stage 5 raw response:", result.text.substring(0, 200))
