@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import type { GameState, GameAction, ActionResult, AgentTool } from './types'
+import { tool, type ToolSet } from 'ai'
+import type { AgentTool } from './types'
 
 /**
  * Game action tools that agents can use
@@ -19,8 +20,12 @@ export const moveActionTool: AgentTool = {
   execute: async (parameters, gameState) => {
     const { direction, distance = 1 } = parameters as { direction: string; distance?: number }
 
-    // Simulate movement
-    const newPosition = { ...gameState.position }
+    // Simulate movement (position defaults to origin when unset)
+    const newPosition = {
+      x: gameState.position?.x ?? 0,
+      y: gameState.position?.y ?? 0,
+      z: gameState.position?.z ?? 0,
+    }
     switch (direction) {
       case 'north':
         newPosition.y = (newPosition.y || 0) + distance
@@ -199,7 +204,7 @@ export const speakTool: AgentTool = {
 
     // Update dialogue context
     const newDialogueContext = {
-      npcName: npc.properties.name as string || 'Unknown NPC',
+      npcName: (npc.properties['name'] as string) || 'Unknown NPC',
       npcId,
       conversationHistory: [
         ...(gameState.dialogueContext?.conversationHistory || []),
@@ -358,14 +363,19 @@ export const gameActionTools: AgentTool[] = [
 ]
 
 /**
- * Convert agent tools to AI SDK tool format
+ * Convert agent tools to AI SDK tool format.
+ *
+ * Tools are exposed without an `execute` handler so that the engine receives
+ * the raw tool calls and can run them against the current game state itself.
  */
-export function convertToAISDKTools(tools: AgentTool[]) {
-  return tools.reduce((acc, tool) => {
-    acc[tool.name] = {
-      description: tool.description,
-      parameters: tool.parameters,
-    }
-    return acc
-  }, {} as Record<string, { description: string; parameters: unknown }>)
+export function convertToAISDKTools(tools: AgentTool[]): ToolSet {
+  return Object.fromEntries(
+    tools.map((agentTool) => [
+      agentTool.name,
+      tool({
+        description: agentTool.description,
+        inputSchema: agentTool.parameters,
+      }),
+    ]),
+  )
 }

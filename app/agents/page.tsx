@@ -483,7 +483,7 @@ export default function AgentsPage() {
                   <Zap className="w-4 h-4" />
                   <AlertTitle>Agent Ready!</AlertTitle>
                   <AlertDescription>
-                    Session ID: {sessionId}. Go to the "Play Game" tab to start.
+                    Session ID: {sessionId}. Go to the &quot;Play Game&quot; tab to start.
                   </AlertDescription>
                 </Alert>
               )}
@@ -506,7 +506,7 @@ export default function AgentsPage() {
                     <AlertCircle className="w-4 h-4" />
                     <AlertTitle>No Active Session</AlertTitle>
                     <AlertDescription>
-                      Create an agent first in the "Create Agent" tab.
+                      Create an agent first in the &quot;Create Agent&quot; tab.
                     </AlertDescription>
                   </Alert>
                 ) : (

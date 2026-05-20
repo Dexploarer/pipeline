@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+
 export const CacheTiers = {
   // AI Generation Cache (24 hours) - Avoid regenerating identical content
   AI_NPC: (archetype: string, hash: string) => `ai:npc:${archetype}:${hash}`,
@@ -41,7 +43,6 @@ export function generateHash(data: any): string {
   // Canonicalize the object by sorting keys recursively
   const canonical = JSON.stringify(data, Object.keys(data).sort())
 
-  // Use crypto.createHash for proper SHA-256 hashing
-  const crypto = require("node:crypto")
-  return crypto.createHash("sha256").update(canonical).digest("hex")
+  // Use createHash for proper SHA-256 hashing
+  return createHash("sha256").update(canonical).digest("hex")
 }

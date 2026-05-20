@@ -1,17 +1,17 @@
 'use client'
 
 import React from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Play, Zap } from 'lucide-react'
 
-interface TriggerNodeData {
+type TriggerNodeData = {
   label: string
   triggerType?: 'manual' | 'webhook' | 'schedule' | 'event'
 }
 
-export function TriggerNode({ data, selected }: NodeProps<TriggerNodeData>) {
+export function TriggerNode({ data, selected }: NodeProps<Node<TriggerNodeData>>) {
   return (
     <Card
       className={`min-w-[250px] transition-all ${

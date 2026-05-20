@@ -1,4 +1,4 @@
-import { streamText, generateText } from 'ai'
+import { streamText, generateText, stepCountIs } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { openai } from '@ai-sdk/openai'
 import type {
@@ -6,11 +6,10 @@ import type {
   AgentSession,
   GameState,
   GameAction,
-  ActionResult,
   AgentDecision,
   AgentStreamChunk,
 } from './types'
-import { gameActionTools } from './tools'
+import { convertToAISDKTools, gameActionTools } from './tools'
 
 /**
  * Game Playing AI Agent Engine
@@ -192,13 +191,7 @@ Think through:
 Then use the appropriate tool to take action.`
 
     // Convert tools to AI SDK format
-    const tools = gameActionTools.reduce((acc, tool) => {
-      acc[tool.name] = {
-        description: tool.description,
-        parameters: tool.parameters,
-      }
-      return acc
-    }, {} as Record<string, { description: string; parameters: unknown }>)
+    const tools = convertToAISDKTools(gameActionTools)
 
     // Get the model
     const model = this.getModel()
@@ -210,9 +203,9 @@ Then use the appropriate tool to take action.`
         system: systemPrompt,
         prompt,
         tools,
-        maxSteps: 5, // Allow multi-step reasoning
+        stopWhen: stepCountIs(5), // Allow multi-step reasoning
         temperature: this.config.temperature,
-        maxTokens: this.config.maxTokens,
+        maxOutputTokens: this.config.maxTokens,
       })
 
       // Stream the response chunks
@@ -225,11 +218,11 @@ Then use the appropriate tool to take action.`
       }
 
       // Get the final result with tool calls
-      const finalResult = await result
+      const toolCalls = await result.toolCalls
 
       // Process tool calls
-      if (finalResult.toolCalls && finalResult.toolCalls.length > 0) {
-        for (const toolCall of finalResult.toolCalls) {
+      if (toolCalls.length > 0) {
+        for (const toolCall of toolCalls) {
           yield {
             type: 'tool_call',
             content: `Executing: ${toolCall.toolName}`,
@@ -241,7 +234,10 @@ Then use the appropriate tool to take action.`
           const tool = gameActionTools.find((t) => t.name === toolCall.toolName)
           if (tool) {
             try {
-              const actionResult = await tool.execute(toolCall.args, gameState)
+              const actionResult = await tool.execute(
+                toolCall.input as Record<string, unknown>,
+                gameState,
+              )
 
               yield {
                 type: 'tool_result',
@@ -303,17 +299,7 @@ Then use the appropriate tool to take action.`
 Based on the current game state, decide on the best action to take. Use one of the available tools.`
 
     // Convert tools to AI SDK format
-    const tools = gameActionTools.reduce((acc, tool) => {
-      acc[tool.name] = {
-        description: tool.description,
-        parameters: tool.parameters,
-        execute: async (args: Record<string, unknown>) => {
-          const result = await tool.execute(args, gameState)
-          return result
-        },
-      }
-      return acc
-    }, {} as Record<string, unknown>)
+    const tools = convertToAISDKTools(gameActionTools)
 
     const model = this.getModel()
 
@@ -322,27 +308,30 @@ Based on the current game state, decide on the best action to take. Use one of t
       model,
       system: systemPrompt,
       prompt,
-      tools: tools as any,
-      maxSteps: 3,
+      tools,
+      stopWhen: stepCountIs(3),
       temperature: this.config.temperature,
-      maxTokens: this.config.maxTokens,
+      maxOutputTokens: this.config.maxTokens,
     })
 
     // Extract the decision
     let action: GameAction = { type: 'wait', parameters: {} }
-    let reasoning = result.text
+    const reasoning = result.text
 
-    if (result.toolCalls && result.toolCalls.length > 0) {
-      const toolCall = result.toolCalls[0]
+    const toolCall = result.toolCalls[0]
+    if (toolCall) {
       action = {
         type: toolCall.toolName,
-        parameters: toolCall.args,
+        parameters: toolCall.input as Record<string, unknown>,
       }
 
       // Execute the tool to get the result
       const tool = gameActionTools.find((t) => t.name === toolCall.toolName)
       if (tool) {
-        const actionResult = await tool.execute(toolCall.args, gameState)
+        const actionResult = await tool.execute(
+          toolCall.input as Record<string, unknown>,
+          gameState,
+        )
 
         // Record action
         this.session.actionHistory.push({

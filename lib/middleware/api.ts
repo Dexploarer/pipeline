@@ -181,7 +181,7 @@ async function validateRequestData(
     }
 
     return { success: true }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: new ValidationError("Request validation failed"),

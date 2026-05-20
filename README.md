@@ -36,21 +36,21 @@ A comprehensive unified platform combining visual workflow design, event-driven 
 ### Prerequisites
 
 ```bash
-# Node.js 18+ required
-node --version
-
-# Environment variables
-cp .env.example .env
+# Bun 1.x required - https://bun.sh
+bun --version
 ```
+
+Create a `.env.local` file in the project root with the variables described
+in [Environment Variables](#environment-variables) below.
 
 ### Installation
 
 ```bash
 # Install dependencies
-npm install --legacy-peer-deps
+bun install
 
 # Run development server
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to access the unified platform.
@@ -211,13 +211,13 @@ await executeWorkflow(workflow)
 
 ```bash
 # Run all tests
-npm test
+bun run test
 
 # Type checking
-npm run type-check
+bun run type-check
 
 # Linting
-npm run lint
+bun run lint
 ```
 
 ## 📈 Version History

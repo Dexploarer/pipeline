@@ -148,9 +148,10 @@ export function getModelForTask(task: TaskType, customModel?: string, priority: 
     if (!ANTHROPIC_API_KEY) {
       throw new Error("ANTHROPIC_API_KEY environment variable is not set")
     }
-    // Remove the "anthropic/" prefix
+    // Remove the "anthropic/" prefix. The provider reads ANTHROPIC_API_KEY
+    // from the environment, which is validated above.
     const directModelId = modelId.replace("anthropic/", "")
-    return anthropic(directModelId, { apiKey: ANTHROPIC_API_KEY })
+    return anthropic(directModelId)
   }
 
   // Fallback: if we have OpenAI key but model is not OpenAI, warn and use default

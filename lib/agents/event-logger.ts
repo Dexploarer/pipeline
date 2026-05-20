@@ -1,5 +1,6 @@
 import { XMLBuilder, XMLParser } from 'fast-xml-parser'
 import type { XMLEvent, EventLog, EventMessage } from './event-types'
+import type { GameState } from './types'
 
 /**
  * XML Event Logger
@@ -26,36 +27,32 @@ export class XMLEventLogger {
   /**
    * Log a game state event
    */
-  logGameState(sessionId: string, gameState: Record<string, unknown>): XMLEvent {
+  logGameState(sessionId: string, gameState: GameState): XMLEvent {
     const xml = this.xmlBuilder.build({
       event: {
         '@_type': 'game_state',
         '@_timestamp': new Date().toISOString(),
         environment: gameState.environment,
         position: {
-          '@_x': (gameState.position as any)?.x || 0,
-          '@_y': (gameState.position as any)?.y || 0,
-          '@_z': (gameState.position as any)?.z || 0,
+          '@_x': gameState.position?.x ?? 0,
+          '@_y': gameState.position?.y ?? 0,
+          '@_z': gameState.position?.z ?? 0,
         },
-        stats: gameState.stats || {},
+        stats: gameState.stats,
         inventory: {
-          item: Array.isArray(gameState.inventory)
-            ? (gameState.inventory as any[]).map((item) => ({
-                '@_id': item.id,
-                '@_name': item.name,
-                '@_quantity': item.quantity,
-              }))
-            : [],
+          item: gameState.inventory.map((item) => ({
+            '@_id': item.id,
+            '@_name': item.name,
+            '@_quantity': item.quantity,
+          })),
         },
         visibleEntities: {
-          entity: Array.isArray((gameState as any).visibleEntities)
-            ? ((gameState as any).visibleEntities as any[]).map((entity) => ({
-                '@_id': entity.id,
-                '@_type': entity.type,
-                '@_x': entity.position?.x || 0,
-                '@_y': entity.position?.y || 0,
-              }))
-            : [],
+          entity: gameState.visibleEntities.map((entity) => ({
+            '@_id': entity.id,
+            '@_type': entity.type,
+            '@_x': entity.position.x,
+            '@_y': entity.position.y,
+          })),
         },
       },
     })
@@ -64,7 +61,7 @@ export class XMLEventLogger {
       type: 'game_state',
       timestamp: new Date(),
       xml,
-      data: gameState,
+      data: gameState as unknown as Record<string, unknown>,
       source: 'game_engine',
       metadata: { sessionId, tags: ['state', 'observation'] },
     }

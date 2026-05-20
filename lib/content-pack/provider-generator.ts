@@ -390,7 +390,6 @@ function generateCustomProviderCode(
  */
 function compileProvider(definition: ProviderDefinition): Provider {
   // Use Function constructor to compile code string
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const get = new Function(
     "runtime",
     "message",

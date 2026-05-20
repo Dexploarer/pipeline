@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Mic, Volume2 } from 'lucide-react'
 
-interface VoiceConfigNodeData {
+type VoiceConfigNodeData = {
   label: string
   voiceId?: string
   stability?: number
@@ -14,7 +14,7 @@ interface VoiceConfigNodeData {
   model?: string
 }
 
-export function VoiceConfigNode({ data, selected }: NodeProps<VoiceConfigNodeData>) {
+export function VoiceConfigNode({ data, selected }: NodeProps<Node<VoiceConfigNodeData>>) {
   return (
     <Card
       className={`min-w-[250px] transition-all ${

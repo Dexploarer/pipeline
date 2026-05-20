@@ -617,7 +617,6 @@ async function generateEvaluatorValidatorCode(
  */
 function compileEvaluator(definition: EvaluatorDefinition): Evaluator {
   // Use Function constructor to compile code strings
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const handler = new Function(
     "runtime",
     "message",
@@ -627,7 +626,6 @@ function compileEvaluator(definition: EvaluatorDefinition): Evaluator {
     `return (${definition.handlerCode})(runtime, message, state, didRespond, callback)`
   ) as Evaluator["handler"]
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const validate = new Function(
     "runtime",
     "message",

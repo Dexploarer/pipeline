@@ -19,15 +19,15 @@ export class SuccessPatternEvaluator implements Evaluator {
   name = 'successPattern'
   description = 'Identifies patterns in successful actions'
 
-  async evaluate(events: XMLEvent[], sessionId: string): Promise<EvaluationResult> {
+  async evaluate(events: XMLEvent[], _sessionId: string): Promise<EvaluationResult> {
     // Find action events with positive rewards
-    const actions = events.filter((e) => e.type === 'action' && (e.data.result as any)?.reward > 0)
+    const actions = events.filter((e) => e.type === 'action' && (e.data['result'] as any)?.reward > 0)
 
     // Group by action type
     const patterns = new Map<string, { count: number; totalReward: number }>()
     for (const action of actions) {
-      const actionType = action.data.actionType as string
-      const reward = (action.data.result as any)?.reward || 0
+      const actionType = action.data['actionType'] as string
+      const reward = (action.data['result'] as any)?.reward || 0
 
       if (!patterns.has(actionType)) {
         patterns.set(actionType, { count: 0, totalReward: 0 })
@@ -80,13 +80,13 @@ export class MistakeLearningEvaluator implements Evaluator {
   name = 'mistakeLearning'
   description = 'Learns from failed actions and mistakes'
 
-  async evaluate(events: XMLEvent[], sessionId: string): Promise<EvaluationResult> {
+  async evaluate(events: XMLEvent[], _sessionId: string): Promise<EvaluationResult> {
     // Find failed actions
-    const failures = events.filter((e) => e.type === 'action' && !(e.data.result as any)?.success)
+    const failures = events.filter((e) => e.type === 'action' && !(e.data['result'] as any)?.success)
 
-    const lessons = failures.map((failure, idx) => ({
+    const lessons = failures.map((failure) => ({
       type: 'lesson',
-      content: `Avoid action '${failure.data.actionType}' with parameters ${JSON.stringify(failure.data.parameters)} - resulted in: ${(failure.data.result as any)?.description}`,
+      content: `Avoid action '${failure.data['actionType']}' with parameters ${JSON.stringify(failure.data['parameters'])} - resulted in: ${(failure.data['result'] as any)?.description}`,
       confidence: 0.8,
     }))
 
@@ -97,8 +97,8 @@ export class MistakeLearningEvaluator implements Evaluator {
         '@_failureCount': failures.length,
         lessons: {
           lesson: failures.map((failure) => ({
-            '@_action': failure.data.actionType,
-            description: (failure.data.result as any)?.description || 'Unknown failure',
+            '@_action': failure.data['actionType'],
+            description: (failure.data['result'] as any)?.description || 'Unknown failure',
           })),
         },
       },
@@ -122,16 +122,16 @@ export class GoalProgressEvaluator implements Evaluator {
   name = 'goalProgress'
   description = 'Evaluates progress toward stated goals'
 
-  async evaluate(events: XMLEvent[], sessionId: string): Promise<EvaluationResult> {
+  async evaluate(events: XMLEvent[], _sessionId: string): Promise<EvaluationResult> {
     // Look for quest completion, exploration, rewards
     const questEvents = events.filter((e) =>
       e.type === 'action' &&
-      (e.data.actionType === 'quest_action' || e.data.actionType === 'interact')
+      (e.data['actionType'] === 'quest_action' || e.data['actionType'] === 'interact')
     )
 
     const totalReward = events
       .filter((e) => e.type === 'reward')
-      .reduce((sum, e) => sum + ((e.data.reward as number) || 0), 0)
+      .reduce((sum, e) => sum + ((e.data['reward'] as number) || 0), 0)
 
     const facts = [
       {
@@ -171,17 +171,17 @@ export class RelationshipEvaluator implements Evaluator {
   name = 'relationships'
   description = 'Tracks and evaluates NPC relationships'
 
-  async evaluate(events: XMLEvent[], sessionId: string): Promise<EvaluationResult> {
+  async evaluate(events: XMLEvent[], _sessionId: string): Promise<EvaluationResult> {
     // Find speak/interact actions
     const socialActions = events.filter((e) =>
       e.type === 'action' &&
-      (e.data.actionType === 'speak' || e.data.actionType === 'interact')
+      (e.data['actionType'] === 'speak' || e.data['actionType'] === 'interact')
     )
 
     // Track who we interacted with
     const npcInteractions = new Map<string, number>()
     for (const action of socialActions) {
-      const npcId = (action.data.parameters as any)?.npcId || (action.data.parameters as any)?.entityId
+      const npcId = (action.data['parameters'] as any)?.npcId || (action.data['parameters'] as any)?.entityId
       if (npcId) {
         npcInteractions.set(npcId, (npcInteractions.get(npcId) || 0) + 1)
       }
@@ -222,11 +222,11 @@ export class EfficiencyEvaluator implements Evaluator {
   name = 'efficiency'
   description = 'Evaluates agent action efficiency and resource usage'
 
-  async evaluate(events: XMLEvent[], sessionId: string): Promise<EvaluationResult> {
+  async evaluate(events: XMLEvent[], _sessionId: string): Promise<EvaluationResult> {
     const actions = events.filter((e) => e.type === 'action')
     const rewards = events.filter((e) => e.type === 'reward')
 
-    const totalReward = rewards.reduce((sum, e) => sum + ((e.data.reward as number) || 0), 0)
+    const totalReward = rewards.reduce((sum, e) => sum + ((e.data['reward'] as number) || 0), 0)
     const rewardPerAction = actions.length > 0 ? totalReward / actions.length : 0
 
     const insights = xmlBuilder.build({

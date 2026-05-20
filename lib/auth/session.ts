@@ -99,7 +99,7 @@ export async function getCurrentUser(): Promise<User | null> {
       email: stackUser.primaryEmail || "",
       name: stackUser.displayName || undefined,
       role: role || "viewer", // Default to least privileged role for security
-      createdAt: new Date(stackUser.createdAt || Date.now()),
+      createdAt: stackUser.signedUpAt,
     }
   } catch (error) {
     logger.error("Failed to get current user from Stack Auth", error as Error)
@@ -154,7 +154,9 @@ export async function getUserFromRequest(authHeader: string | null): Promise<Use
     }
 
     // Verify token with Stack Auth
-    const stackUser = await stackApp.getUser({ accessToken: token })
+    const stackUser = await stackApp.getUser({
+      tokenStore: { accessToken: token, refreshToken: "" },
+    })
     if (!stackUser) {
       return null
     }
@@ -167,7 +169,7 @@ export async function getUserFromRequest(authHeader: string | null): Promise<Use
       email: stackUser.primaryEmail || "",
       name: stackUser.displayName || undefined,
       role: role || "viewer", // Default to least privileged role for security
-      createdAt: new Date(stackUser.createdAt || Date.now()),
+      createdAt: stackUser.signedUpAt,
     }
   } catch (error) {
     logger.error("Failed to verify user token", error as Error)

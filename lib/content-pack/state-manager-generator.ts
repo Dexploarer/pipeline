@@ -554,38 +554,32 @@ function compileStateManager<T extends PlayerStateData>(
 
   // Create manager class
   class CompiledStateManager implements IStateManager<T> {
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     getState = new Function(
       "playerId",
       `return (${definition.getStateCode}).call(this, playerId)`
     ) as IStateManager<T>["getState"]
 
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     setState = new Function(
       "playerId",
       "state",
       `return (${definition.setStateCode}).call(this, playerId, state)`
     ) as IStateManager<T>["setState"]
 
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     updateState = new Function(
       "playerId",
       "updates",
       `return (${definition.updateStateCode}).call(this, playerId, updates)`
     ) as IStateManager<T>["updateState"]
 
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     deleteState = new Function(
       "playerId",
       `return (${definition.deleteStateCode}).call(this, playerId)`
     ) as IStateManager<T>["deleteState"]
 
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     getAllStates = new Function(
       `return (${definition.getAllStatesCode}).call(this)`
     ) as IStateManager<T>["getAllStates"]
 
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     clearAllStates = new Function(
       `return (${definition.clearAllStatesCode}).call(this)`
     ) as IStateManager<T>["clearAllStates"]

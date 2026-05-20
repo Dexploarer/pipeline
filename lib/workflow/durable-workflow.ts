@@ -1,5 +1,4 @@
-import { serve, waitSeconds, waitMinutes } from '@upstash/workflow'
-import type { WorkflowContext, NodeExecutionResult } from './types'
+import { serve } from '@upstash/workflow'
 
 /**
  * Durable workflow powered by Upstash Workflow DevKit
@@ -7,14 +6,16 @@ import type { WorkflowContext, NodeExecutionResult } from './types'
  */
 
 // API base URL configuration
-const getApiBaseUrl = () => {
+const getApiBaseUrl = (): string => {
   // In production, use NEXT_PUBLIC_API_URL or VERCEL_URL
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL']
+  if (apiUrl) {
+    return apiUrl
   }
 
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
+  const vercelUrl = process.env['VERCEL_URL']
+  if (vercelUrl) {
+    return `https://${vercelUrl}`
   }
 
   // Local development fallback
@@ -36,22 +37,6 @@ interface NPCGenerationInput {
     similarityBoost?: number
   }
   exportFormats?: string[]
-}
-
-interface NPCGenerationOutput {
-  npc: {
-    id: string
-    name: string
-    personality: string
-    backstory: string
-    dialoguePatterns: string[]
-    relationships: Array<{ npcId: string; relationship: string }>
-  }
-  voice?: {
-    voiceId: string
-    previewUrl?: string
-  }
-  exports?: Record<string, string>
 }
 
 /**
@@ -90,7 +75,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
     })
 
     // Wait a bit for rate limiting
-    await waitSeconds('rate-limit-pause-1', 2)
+    await context.sleep('rate-limit-pause-1', 2)
 
     // Step 2: Generate Quest Hooks
     const questHooks = await context.run('generate-quest-hooks', async () => {
@@ -113,7 +98,7 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
       return response.json()
     })
 
-    await waitSeconds('rate-limit-pause-2', 2)
+    await context.sleep('rate-limit-pause-2', 2)
 
     // Step 3: Generate Dialogue Patterns
     const dialoguePatterns = await context.run('generate-dialogue', async () => {
@@ -136,10 +121,10 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
       return response.json()
     })
 
-    await waitSeconds('rate-limit-pause-3', 2)
+    await context.sleep('rate-limit-pause-3', 2)
 
     // Step 4: Configure Voice (ElevenLabs)
-    let voiceResult
+    let voiceResult: unknown
     if (voiceConfig) {
       voiceResult = await context.run('configure-voice', async () => {
         console.log('🎤 Configuring ElevenLabs voice...')
@@ -164,11 +149,11 @@ export const npcGenerationWorkflow = serve<NPCGenerationInput>(
         return response.json()
       })
 
-      await waitSeconds('rate-limit-pause-4', 2)
+      await context.sleep('rate-limit-pause-4', 2)
     }
 
     // Step 5: Export to formats
-    let exportResults
+    let exportResults: unknown
     if (exportFormats && exportFormats.length > 0) {
       exportResults = await context.run('export-npc', async () => {
         console.log('📦 Exporting NPC to formats:', exportFormats)
@@ -309,7 +294,7 @@ export const batchNPCGenerationWorkflow = serve<{ npcs: NPCGenerationInput[] }>(
 
       // Wait between batch items to avoid rate limits
       if (i < npcs.length - 1) {
-        await waitSeconds(`batch-pause-${i}`, 5)
+        await context.sleep(`batch-pause-${i}`, 5)
       }
     }
 
