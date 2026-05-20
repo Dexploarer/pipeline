@@ -4,36 +4,23 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Check, AlertCircle, Layers } from "lucide-react"
-import type {
-  LayeredQuest,
-  GameFlowLayer,
-  LoreLayer,
-  HistoryLayer,
-  RelationshipLayer,
-  EconomyLayer,
-  WorldEventLayer
-} from "@/lib/npc-types"
+import type { GameFlowLayer, LoreLayer } from "@/lib/npc-types"
+import type { QuestDraft, DraftLayerValue } from "./layered-quest-builder"
 
 type LayerCombinerProps = {
-  quest: Partial<LayeredQuest>
+  quest: QuestDraft
   onCombine: () => void
 }
 
-// Define discriminated union for layer data types
-type LayerData =
-  | { type: 'gameflow'; data: GameFlowLayer }
-  | { type: 'lore'; data: LoreLayer }
-  | { type: 'history'; data: HistoryLayer }
-  | { type: 'relationships'; data: RelationshipLayer }
-  | { type: 'economy'; data: EconomyLayer }
-  | { type: 'worldEvents'; data: WorldEventLayer }
-
 export function LayerCombiner({ quest, onCombine }: LayerCombinerProps) {
-  const validateLayer = (layerType: string, layerData: LayerData['data']): { valid: boolean; issues: string[] } => {
+  const validateLayer = (
+    layerType: string,
+    layerData: NonNullable<DraftLayerValue>,
+  ): { valid: boolean; issues: string[] } => {
     const issues: string[] = []
 
     if (layerType === "gameflow") {
-      const gameflowData = layerData as GameFlowLayer
+      const gameflowData = layerData as Partial<GameFlowLayer>
       if (!gameflowData.objectives || gameflowData.objectives.length === 0) {
         issues.push("No objectives defined")
       }
@@ -47,7 +34,7 @@ export function LayerCombiner({ quest, onCombine }: LayerCombinerProps) {
     }
 
     if (layerType === "lore") {
-      const loreData = layerData as LoreLayer
+      const loreData = layerData as Partial<LoreLayer>
       if (!loreData.summary || loreData.summary.trim() === "") {
         issues.push("Missing lore summary")
       }

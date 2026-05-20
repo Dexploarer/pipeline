@@ -4,7 +4,7 @@ interface DialogueTree {
   id: string
   npcId?: string
   questId?: string
-  treeData: any
+  treeData: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
 }
@@ -41,7 +41,7 @@ export async function getDialogueTreesByQuest(questId: string): Promise<Dialogue
 
 export async function updateDialogueTree(id: string, data: Partial<DialogueTree>): Promise<DialogueTree> {
   const updates: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let paramIndex = 1
 
   if (data.treeData !== undefined) {

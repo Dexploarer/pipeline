@@ -677,13 +677,11 @@ async function generateCleanupCode(
  */
 function compileGameSystem(definition: GameSystemDefinition): IGameSystem {
   // Use Function constructor to compile code strings
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const initialize = new Function(
     "runtime",
     `return (${definition.initializeCode})(runtime)`
   ) as IGameSystem["initialize"]
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const executeCommand = new Function(
     "command",
     "args",
@@ -691,21 +689,18 @@ function compileGameSystem(definition: GameSystemDefinition): IGameSystem {
     `return (${definition.executeCommandCode})(command, args, runtime)`
   ) as IGameSystem["executeCommand"]
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const queryWorld = new Function(
     "query",
     "runtime",
     `return (${definition.queryWorldCode})(query, runtime)`
   ) as IGameSystem["queryWorld"]
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const updateWorld = new Function(
     "updates",
     "runtime",
     `return (${definition.updateWorldCode})(updates, runtime)`
   ) as IGameSystem["updateWorld"]
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const cleanup = new Function(
     `return (${definition.cleanupCode})()`
   ) as IGameSystem["cleanup"]

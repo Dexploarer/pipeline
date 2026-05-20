@@ -8,7 +8,7 @@ export class ElevenLabsClient {
   private baseUrl = 'https://api.elevenlabs.io/v1'
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.ELEVENLABS_API_KEY || ''
+    this.apiKey = apiKey || process.env['ELEVENLABS_API_KEY'] || ''
     if (!this.apiKey) {
       throw new Error('ElevenLabs API key is required')
     }

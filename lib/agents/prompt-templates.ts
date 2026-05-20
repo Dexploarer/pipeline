@@ -1,4 +1,5 @@
 import type { PromptTemplate, CompiledPrompt, XMLEvent, ProviderContext, MemoryEntry } from './event-types'
+import type { GameState } from './types'
 
 /**
  * Prompt Templates for different agent scenarios
@@ -370,11 +371,11 @@ export function createDefaultTemplates(): TemplateRegistry {
  * Select appropriate template based on game state and recent events
  */
 export function selectTemplate(
-  gameState: any,
+  gameState: GameState | undefined,
   recentEvents: XMLEvent[]
 ): string {
   // Check for combat
-  const hasEnemies = gameState.visibleEntities?.some((e: any) =>
+  const hasEnemies = gameState?.visibleEntities?.some((e) =>
     ['enemy', 'hostile', 'goblin', 'orc', 'skeleton'].includes(e.type)
   )
   if (hasEnemies) {
@@ -382,7 +383,7 @@ export function selectTemplate(
   }
 
   // Check for dialogue
-  const hasDialogue = gameState.dialogueContext != null
+  const hasDialogue = gameState?.dialogueContext != null
   if (hasDialogue) {
     return 'social'
   }

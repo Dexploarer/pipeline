@@ -37,7 +37,10 @@ export async function POST(req: Request) {
         prompt: `Generate dialogue tree nodes for context: "${context}"
 
 Existing nodes:
-${existingNodes.map((n: any) => `${n.id}: "${n.text}"`).join("\n")}
+${existingNodes.map((n: unknown) => {
+  const node = (n ?? {}) as { id?: unknown; text?: unknown }
+  return `${String(node.id ?? "")}: "${String(node.text ?? "")}"`
+}).join("\n")}
 
 Create 3-5 new dialogue nodes that expand the conversation naturally. Each node should have:
 - Unique ID

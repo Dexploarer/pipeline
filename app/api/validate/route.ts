@@ -14,8 +14,39 @@ interface ValidationResult {
   tests: ValidationTest[]
 }
 
+// Loosely-typed shapes for validation input (raw, unvalidated request data)
+interface NPCInput {
+  dialogues?: unknown[]
+  personality?: { traits?: unknown[] }
+  quests?: QuestInput[]
+}
+
+interface QuestObjectiveInput {
+  description?: string
+  type?: string
+}
+
+interface QuestInput {
+  id?: string
+  objectives?: QuestObjectiveInput[]
+  rewards?: { experience?: number; gold?: number }
+  prerequisites?: string[]
+}
+
+interface FactionInput {
+  name?: string
+  stance?: string
+}
+
+interface LoreEntryInput {
+  era?: string
+  summary?: string
+  category?: string
+  factions?: FactionInput[]
+}
+
 // Validation functions
-function validateNPCScripts(npcs: any[]): ValidationResult {
+function validateNPCScripts(npcs: NPCInput[]): ValidationResult {
   const tests: ValidationTest[] = []
   let passed = 0
   let failed = 0
@@ -70,7 +101,7 @@ function validateNPCScripts(npcs: any[]): ValidationResult {
 
   // Check quest availability
   const questIssues = npcs.filter(npc =>
-    npc.quests && npc.quests.some((q: any) => !q.objectives || q.objectives.length === 0)
+    npc.quests && npc.quests.some((q: QuestInput) => !q.objectives || q.objectives.length === 0)
   )
   if (questIssues.length === 0) {
     tests.push({
@@ -97,7 +128,7 @@ function validateNPCScripts(npcs: any[]): ValidationResult {
   }
 }
 
-function validateQuestLogic(quests: any[]): ValidationResult {
+function validateQuestLogic(quests: QuestInput[]): ValidationResult {
   const tests: ValidationTest[] = []
   let passed = 0
   let failed = 0
@@ -106,7 +137,7 @@ function validateQuestLogic(quests: any[]): ValidationResult {
   // Check objective completability
   const incompletableQuests = quests.filter(quest =>
     !quest.objectives || quest.objectives.length === 0 ||
-    quest.objectives.some((obj: any) => !obj.description || !obj.type)
+    quest.objectives.some((obj: QuestObjectiveInput) => !obj.description || !obj.type)
   )
   if (incompletableQuests.length === 0) {
     tests.push({
@@ -126,7 +157,9 @@ function validateQuestLogic(quests: any[]): ValidationResult {
 
   // Check reward balance
   const generousRewards = quests.filter(quest =>
-    quest.rewards && (quest.rewards.experience > 10000 || quest.rewards.gold > 5000)
+    quest.rewards && (
+      (quest.rewards.experience ?? 0) > 10000 || (quest.rewards.gold ?? 0) > 5000
+    )
   )
   if (generousRewards.length > 0) {
     tests.push({
@@ -175,7 +208,7 @@ function validateQuestLogic(quests: any[]): ValidationResult {
   }
 }
 
-function validateLoreConsistency(loreEntries: any[]): ValidationResult {
+function validateLoreConsistency(loreEntries: LoreEntryInput[]): ValidationResult {
   const tests: ValidationTest[] = []
   let passed = 0
   let failed = 0
@@ -204,7 +237,7 @@ function validateLoreConsistency(loreEntries: any[]): ValidationResult {
   // Check faction relationships
   const factionIssues = loreEntries.filter(entry =>
     entry.factions && entry.factions.length > 0 &&
-    entry.factions.some((f: any) => !f.name || !f.stance)
+    entry.factions.some((f: FactionInput) => !f.name || !f.stance)
   )
   if (factionIssues.length === 0) {
     tests.push({

@@ -151,7 +151,7 @@ export function NPCSimulator() {
         <ScrollArea className="h-[400px] rounded-lg border border-border bg-background p-4 mb-4">
           <div className="space-y-4">
             {messages.length === 0 && (
-              <div className="text-center text-muted-foreground py-12">Click "Start" to begin the simulation</div>
+              <div className="text-center text-muted-foreground py-12">Click &quot;Start&quot; to begin the simulation</div>
             )}
             {messages.map((msg) => (
               <div key={msg.id} className={`flex gap-3 ${msg.sender === "player" ? "justify-end" : "justify-start"}`}>

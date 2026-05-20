@@ -1,19 +1,19 @@
 'use client'
 
 import React from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Download, Package, Mic } from 'lucide-react'
 
-interface ExportNodeData {
+type ExportNodeData = {
   label: string
   formats?: string[]
   includeVoice?: boolean
   includeAssets?: boolean
 }
 
-export function ExportNode({ data, selected }: NodeProps<ExportNodeData>) {
+export function ExportNode({ data, selected }: NodeProps<Node<ExportNodeData>>) {
   return (
     <Card
       className={`min-w-[250px] transition-all ${

@@ -1,33 +1,46 @@
 import { Redis } from "@upstash/redis"
 
-// Validate environment variables
-const KV_REST_API_URL = process.env["KV_REST_API_URL"]
-const KV_REST_API_TOKEN = process.env["KV_REST_API_TOKEN"]
+let redisClient: Redis | null = null
+let redisResolved = false
 
-if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
-  throw new Error(
-    "Missing required Redis credentials: KV_REST_API_URL and KV_REST_API_TOKEN must be set in environment variables",
-  )
+/**
+ * Get the shared Upstash Redis client.
+ *
+ * Returns `null` when Redis credentials are not configured so that callers
+ * can degrade gracefully instead of crashing the process at import time.
+ */
+export function getRedisClient(): Redis | null {
+  if (redisResolved) {
+    return redisClient
+  }
+  redisResolved = true
+
+  const url = process.env["KV_REST_API_URL"]
+  const token = process.env["KV_REST_API_TOKEN"]
+
+  if (!url || !token) {
+    console.warn("[cache] Redis credentials not configured - caching is disabled")
+    return null
+  }
+
+  redisClient = new Redis({ url, token })
+  return redisClient
 }
-
-// Initialize Redis client
-const redis = new Redis({
-  url: KV_REST_API_URL,
-  token: KV_REST_API_TOKEN,
-})
 
 // Cache client with automatic serialization and error handling
 export class CacheClient {
-  private redis: Redis
-
-  constructor() {
-    this.redis = redis
+  private getClient(): Redis {
+    const client = getRedisClient()
+    if (!client) {
+      throw new Error("Redis cache is not configured")
+    }
+    return client
   }
 
   // Get value from cache
   async get<T>(key: string): Promise<T | null> {
     try {
-      const value = await this.redis.get<T>(key)
+      const value = await this.getClient().get<T>(key)
       return value
     } catch (error) {
       console.error("[v0] Cache get error:", error)
@@ -39,9 +52,9 @@ export class CacheClient {
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
       if (ttl !== undefined) {
-        await this.redis.setex(key, ttl, value)
+        await this.getClient().setex(key, ttl, value)
       } else {
-        await this.redis.set(key, value)
+        await this.getClient().set(key, value)
       }
     } catch (error) {
       console.error("[v0] Cache set error:", error)
@@ -51,7 +64,7 @@ export class CacheClient {
   // Delete key from cache
   async del(key: string): Promise<void> {
     try {
-      await this.redis.del(key)
+      await this.getClient().del(key)
     } catch (error) {
       console.error("[v0] Cache del error:", error)
     }
@@ -60,7 +73,7 @@ export class CacheClient {
   // Check if key exists
   async exists(key: string): Promise<boolean> {
     try {
-      const result = await this.redis.exists(key)
+      const result = await this.getClient().exists(key)
       return result === 1
     } catch (error) {
       console.error("[v0] Cache exists error:", error)
@@ -71,7 +84,7 @@ export class CacheClient {
   // Get multiple keys
   async mget<T>(keys: string[]): Promise<Array<T | null>> {
     try {
-      const results = await this.redis.mget(...keys)
+      const results = await this.getClient().mget(...keys)
       return results as Array<T | null>
     } catch (error) {
       console.error("[v0] Cache mget error:", error)
@@ -99,7 +112,7 @@ export class CacheClient {
 
       do {
         // Use SCAN with pattern and count
-        const result = await this.redis.scan(cursor, {
+        const result = await this.getClient().scan(cursor, {
           match: pattern,
           count: 100,
         })
@@ -126,7 +139,7 @@ export class CacheClient {
     try {
       const keys = await this.keys(pattern)
       if (keys.length > 0) {
-        await this.redis.del(...keys)
+        await this.getClient().del(...keys)
         return keys.length
       }
       return 0
@@ -139,7 +152,7 @@ export class CacheClient {
   // Increment counter
   async incr(key: string): Promise<number> {
     try {
-      return await this.redis.incr(key)
+      return await this.getClient().incr(key)
     } catch (error) {
       console.error("[v0] Cache incr error:", error)
       return 0
@@ -149,7 +162,7 @@ export class CacheClient {
   // Decrement counter
   async decr(key: string): Promise<number> {
     try {
-      return await this.redis.decr(key)
+      return await this.getClient().decr(key)
     } catch (error) {
       console.error("[v0] Cache decr error:", error)
       return 0
@@ -159,7 +172,7 @@ export class CacheClient {
   // List operations
   async lpush<T>(key: string, value: T): Promise<number> {
     try {
-      return await this.redis.lpush(key, value)
+      return await this.getClient().lpush(key, value)
     } catch (error) {
       console.error("[v0] Cache lpush error:", error)
       return 0
@@ -168,7 +181,7 @@ export class CacheClient {
 
   async rpop<T>(key: string): Promise<T | null> {
     try {
-      return await this.redis.rpop<T>(key)
+      return await this.getClient().rpop<T>(key)
     } catch (error) {
       console.error("[v0] Cache rpop error:", error)
       return null
@@ -177,7 +190,7 @@ export class CacheClient {
 
   async lrange<T>(key: string, start: number, stop: number): Promise<T[]> {
     try {
-      return await this.redis.lrange<T>(key, start, stop)
+      return await this.getClient().lrange<T>(key, start, stop)
     } catch (error) {
       console.error("[v0] Cache lrange error:", error)
       return []
@@ -186,7 +199,7 @@ export class CacheClient {
 
   async ltrim(key: string, start: number, stop: number): Promise<void> {
     try {
-      await this.redis.ltrim(key, start, stop)
+      await this.getClient().ltrim(key, start, stop)
     } catch (error) {
       console.error("[v0] Cache ltrim error:", error)
     }
@@ -196,7 +209,7 @@ export class CacheClient {
   async sadd(key: string, ...members: string[]): Promise<number> {
     try {
       if (members.length === 0) return 0
-      return await this.redis.sadd(key, ...(members as [string, ...string[]]))
+      return await this.getClient().sadd(key, ...(members as [string, ...string[]]))
     } catch (error) {
       console.error("[v0] Cache sadd error:", error)
       return 0
@@ -205,7 +218,7 @@ export class CacheClient {
 
   async smembers(key: string): Promise<string[]> {
     try {
-      return await this.redis.smembers(key)
+      return await this.getClient().smembers(key)
     } catch (error) {
       console.error("[v0] Cache smembers error:", error)
       return []
@@ -214,7 +227,7 @@ export class CacheClient {
 
   async srem(key: string, ...members: string[]): Promise<number> {
     try {
-      return await this.redis.srem(key, ...members)
+      return await this.getClient().srem(key, ...members)
     } catch (error) {
       console.error("[v0] Cache srem error:", error)
       return 0
@@ -224,7 +237,7 @@ export class CacheClient {
   // Set expiration
   async expire(key: string, seconds: number): Promise<boolean> {
     try {
-      const result = await this.redis.expire(key, seconds)
+      const result = await this.getClient().expire(key, seconds)
       return result === 1
     } catch (error) {
       console.error("[v0] Cache expire error:", error)
@@ -235,7 +248,7 @@ export class CacheClient {
   // Get TTL
   async ttl(key: string): Promise<number> {
     try {
-      return await this.redis.ttl(key)
+      return await this.getClient().ttl(key)
     } catch (error) {
       console.error("[v0] Cache ttl error:", error)
       return -2
@@ -243,9 +256,9 @@ export class CacheClient {
   }
 
   // Execute Lua script (for atomic operations)
-  async eval(script: string, keys: string[], args: (string | number)[]): Promise<any> {
+  async eval(script: string, keys: string[], args: (string | number)[]): Promise<unknown> {
     try {
-      return await this.redis.eval(script, keys, args)
+      return await this.getClient().eval(script, keys, args)
     } catch (error) {
       console.error("[v0] Cache eval error:", error)
       throw error

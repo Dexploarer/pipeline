@@ -128,6 +128,24 @@ export interface UnrealNPCData {
 }
 
 /**
+ * Godot dialogue node (GDScript-compatible structure)
+ */
+export interface GodotDialogueNode {
+  text: string
+  speaker: string
+  next_nodes: string[]
+  conditions: string[] | undefined
+  actions: string[]
+}
+
+/**
+ * Godot personality block
+ */
+export interface GodotPersonality {
+  traits: string[]
+}
+
+/**
  * Godot-compatible format (GDScript)
  */
 export interface GodotNPCData {
@@ -144,15 +162,31 @@ export interface GodotNPCData {
   }
   archetype: string
   stats: Record<string, number>
-  personality: Record<string, any>
+  personality: GodotPersonality
   dialogue_tree: {
     root_node: string
-    nodes: Record<string, any>
+    nodes: Record<string, GodotDialogueNode>
   }
   behavior_tree: string
   quests: string[]
   inventory: Array<{ item: string; count: number }>
 }
+
+/**
+ * A single turn in an ElizaOS conversation example
+ */
+export interface ElizaOSMessageTurn {
+  user: string
+  content: {
+    text: string
+    action?: string
+  }
+}
+
+/**
+ * An ElizaOS message example is an ordered sequence of conversation turns
+ */
+export type ElizaOSMessageExample = ElizaOSMessageTurn[]
 
 /**
  * ElizaOS-compatible format
@@ -163,7 +197,7 @@ export interface ElizaOSNPCData {
     username?: string
     bio: string | string[]
     lore: string[]
-    messageExamples: any[]
+    messageExamples: ElizaOSMessageExample[]
     postExamples: string[]
     topics: string[]
     adjectives: string[]
@@ -174,9 +208,87 @@ export interface ElizaOSNPCData {
     }
   }
   plugins: IContentPack[]
-  customActions?: any[]
-  customProviders?: any[]
-  customEvaluators?: any[]
+  customActions?: unknown[]
+  customProviders?: unknown[]
+  customEvaluators?: unknown[]
+}
+
+/**
+ * Generic engine-agnostic NPC format
+ */
+export interface GenericNPCData {
+  id: string
+  name: string
+  archetype: NPCScript["personality"]["archetype"]
+  zone: string | undefined
+  position: WorldZone["coordinates"] | undefined
+  personality: NPCScript["personality"]
+  behavior: NPCScript["behavior"]
+  dialogues: NPCScript["dialogues"]
+  quests: NPCScript["quests"]
+  elizaOSConfig: NPCScript["elizaOSConfig"]
+}
+
+/**
+ * Union of every supported per-NPC engine output format
+ */
+export type ConvertedNPCData =
+  | UnityNPCData
+  | UnrealNPCData
+  | GodotNPCData
+  | ElizaOSNPCData
+  | GenericNPCData
+
+/**
+ * Engine-format quest representation
+ */
+export interface ConvertedQuestData {
+  id: string
+  title: string
+  description: QuestDefinition["description"]
+  objectives: QuestDefinition["objectives"]
+  rewards: QuestDefinition["rewards"]
+}
+
+/**
+ * Exported zone payload including all converted NPCs and quests
+ */
+export interface ExportedZoneData {
+  zone: {
+    id: WorldZone["id"]
+    name: WorldZone["name"]
+    description: WorldZone["description"]
+    type: WorldZone["type"]
+    dangerLevel: WorldZone["dangerLevel"]
+    coordinates: WorldZone["coordinates"]
+    factions: WorldZone["factions"]
+  }
+  npcs: ConvertedNPCData[]
+  quests: ConvertedQuestData[]
+  metadata: {
+    exportDate: string
+    engine: GameEngine
+    version: string
+  }
+}
+
+/**
+ * Exported content pack summary payload
+ */
+export interface ExportedContentPackData {
+  id: ContentPack["id"]
+  name: ContentPack["name"]
+  version: ContentPack["version"]
+  description: ContentPack["description"]
+  zones: string[]
+  npcs: number
+  quests: number
+  dialogues: number
+  assets: Record<string, never>
+  metadata: {
+    engine: GameEngine
+    exportDate: string
+  }
 }
 
 // ============================================================================
@@ -189,7 +301,7 @@ export class GameIntegrationService {
   /**
    * Convert NPC Script to game engine format
    */
-  async convertNPC(npc: NPCScript, zone?: WorldZone): Promise<any> {
+  async convertNPC(npc: NPCScript, zone?: WorldZone): Promise<ConvertedNPCData> {
     switch (this.config.engine) {
       case GameEngine.UNITY:
         return this.toUnityFormat(npc, zone)
@@ -381,7 +493,7 @@ export class GameIntegrationService {
   /**
    * Generic JSON format
    */
-  private toGenericFormat(npc: NPCScript, zone?: WorldZone): any {
+  private toGenericFormat(npc: NPCScript, zone?: WorldZone): GenericNPCData {
     return {
       id: crypto.randomUUID(),
       name: npc.personality.name,
@@ -413,8 +525,8 @@ export class GameIntegrationService {
   /**
    * Convert dialogue nodes to Godot format
    */
-  private convertDialogueToGodot(dialogues: DialogueNode[]): Record<string, any> {
-    const nodes: Record<string, any> = {}
+  private convertDialogueToGodot(dialogues: DialogueNode[]): Record<string, GodotDialogueNode> {
+    const nodes: Record<string, GodotDialogueNode> = {}
     dialogues.forEach((node, index) => {
       nodes[node.id || `node_${index}`] = {
         text: node.text,
@@ -430,7 +542,7 @@ export class GameIntegrationService {
   /**
    * Convert dialogue to ElizaOS message examples
    */
-  private convertDialogueToElizaExamples(dialogues: DialogueNode[]): any[] {
+  private convertDialogueToElizaExamples(dialogues: DialogueNode[]): ElizaOSMessageExample[] {
     return dialogues.slice(0, 5).map(node => [
       {
         user: "{{user1}}",
@@ -452,7 +564,7 @@ export class GameIntegrationService {
    * @param npcs - Array of NPC scripts to convert
    * @param zones - Map of zone IDs to WorldZone objects. The key should be the NPC's zone ID.
    */
-  async convertNPCBatch(npcs: NPCScript[], zones?: Map<string, WorldZone>): Promise<any[]> {
+  async convertNPCBatch(npcs: NPCScript[], zones?: Map<string, WorldZone>): Promise<ConvertedNPCData[]> {
     return Promise.all(
       npcs.map(npc => {
         // Look up zone by NPC ID (assumes zones map uses NPC IDs as keys)
@@ -470,7 +582,7 @@ export class GameIntegrationService {
     zone: WorldZone,
     npcs: NPCScript[],
     quests: QuestDefinition[]
-  ): Promise<any> {
+  ): Promise<ExportedZoneData> {
     const convertedNPCs = await this.convertNPCBatch(npcs)
 
     return {
@@ -496,7 +608,7 @@ export class GameIntegrationService {
   /**
    * Convert quest to game format
    */
-  private convertQuest(quest: QuestDefinition): any {
+  private convertQuest(quest: QuestDefinition): ConvertedQuestData {
     return {
       id: crypto.randomUUID(),
       title: quest.title,
@@ -509,7 +621,7 @@ export class GameIntegrationService {
   /**
    * Export content pack for game engine
    */
-  async exportContentPack(contentPack: ContentPack): Promise<any> {
+  async exportContentPack(contentPack: ContentPack): Promise<ExportedContentPackData> {
     return {
       id: contentPack.id,
       name: contentPack.name,
@@ -530,7 +642,7 @@ export class GameIntegrationService {
   /**
    * Send to game engine API
    */
-  async syncToEngine(data: any): Promise<{ success: boolean; message: string }> {
+  async syncToEngine(data: unknown): Promise<{ success: boolean; message: string }> {
     if (!this.config.apiEndpoint) {
       throw new Error("No API endpoint configured")
     }

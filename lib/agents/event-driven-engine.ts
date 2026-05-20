@@ -1,4 +1,4 @@
-import { streamText } from 'ai'
+import { streamText, stepCountIs } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import type {
   AgentConfig,
@@ -6,7 +6,6 @@ import type {
   AgentStreamChunk,
 } from './types'
 import type {
-  XMLEvent,
   EventMessage,
   AgentRuntimeState,
   EventListener,
@@ -16,8 +15,8 @@ import { XMLEventLogger } from './event-logger'
 import { ProviderRegistry, createDefaultProviders } from './providers'
 import { EvaluatorRegistry, createDefaultEvaluators } from './evaluators'
 import { PromptCompiler, createDefaultTemplates, selectTemplate } from './prompt-templates'
-import { gameActionTools } from './tools'
-import type { GameStateProvider, GoalProvider, MemoryProvider, PerformanceProvider, RecentEventsProvider } from './providers'
+import { convertToAISDKTools, gameActionTools } from './tools'
+import type { GameStateProvider, GoalProvider, MemoryProvider, RecentEventsProvider } from './providers'
 
 /**
  * Event-Driven Agent Engine (ElizaOS-inspired)
@@ -87,7 +86,7 @@ export class EventDrivenAgentEngine {
     }
 
     // Log initial game state
-    const stateEvent = this.eventLogger.logGameState(sessionId, initialGameState as any)
+    const stateEvent = this.eventLogger.logGameState(sessionId, initialGameState)
     this.state.eventLog.push(stateEvent)
 
     // Log initialization
@@ -116,7 +115,7 @@ export class EventDrivenAgentEngine {
     }
 
     // Log the event
-    const event = this.eventLogger.logGameState(this.state.sessionId, gameState as any)
+    const event = this.eventLogger.logGameState(this.state.sessionId, gameState)
     this.state.eventLog.push(event)
 
     // Keep event log manageable
@@ -208,13 +207,7 @@ export class EventDrivenAgentEngine {
       }
 
       // 5. Convert tools to AI SDK format
-      const tools = gameActionTools.reduce((acc, tool) => {
-        acc[tool.name] = {
-          description: tool.description,
-          parameters: tool.parameters,
-        }
-        return acc
-      }, {} as Record<string, { description: string; parameters: unknown }>)
+      const tools = convertToAISDKTools(gameActionTools)
 
       // 6. Stream LLM decision
       yield {
@@ -230,7 +223,7 @@ export class EventDrivenAgentEngine {
         system: compiledPrompt.system,
         prompt: compiledPrompt.user,
         tools,
-        maxSteps: 3,
+        stopWhen: stepCountIs(3),
         temperature: this.config.temperature,
       })
 
@@ -253,10 +246,10 @@ export class EventDrivenAgentEngine {
       }
 
       // 7. Execute tool calls
-      const finalResult = await result
+      const toolCalls = await result.toolCalls
 
-      if (finalResult.toolCalls && finalResult.toolCalls.length > 0) {
-        for (const toolCall of finalResult.toolCalls) {
+      if (toolCalls.length > 0) {
+        for (const toolCall of toolCalls) {
           yield {
             type: 'tool_call',
             content: `🔧 Executing: ${toolCall.toolName}`,
@@ -274,13 +267,14 @@ export class EventDrivenAgentEngine {
               const gameStateData = this.eventLogger.parseXML(gameStateContext.xml)
               const gameState = this.reconstructGameState(gameStateData)
 
-              const actionResult = await tool.execute(toolCall.args, gameState)
+              const toolInput = toolCall.input as Record<string, unknown>
+              const actionResult = await tool.execute(toolInput, gameState)
 
               // Log action
               const actionEvent = this.eventLogger.logAction(
                 this.state.sessionId,
                 toolCall.toolName,
-                toolCall.args,
+                toolInput,
                 {
                   success: actionResult.success,
                   description: actionResult.description,
@@ -324,7 +318,7 @@ export class EventDrivenAgentEngine {
 
               this.eventLogger.logError(this.state.sessionId, errorMsg, {
                 tool: toolCall.toolName,
-                args: toolCall.args,
+                args: toolCall.input,
               })
 
               yield {
@@ -436,7 +430,7 @@ export class EventDrivenAgentEngine {
     const memory: MemoryEntry = {
       id: `mem_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       sessionId,
-      type: type as any,
+      type: type as MemoryEntry['type'],
       xmlContent,
       learnedAt: new Date(),
       confidence,
@@ -517,38 +511,59 @@ export class EventDrivenAgentEngine {
   /**
    * Reconstruct game state from XML data (helper)
    */
-  private reconstructGameState(xmlData: any): GameState {
-    const event = xmlData.event || xmlData.context
+  private reconstructGameState(xmlData: Record<string, unknown>): GameState {
+    // Helper: narrow an unknown value to an indexable record
+    const asRecord = (value: unknown): Record<string, unknown> =>
+      typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {}
 
     // Helper to ensure array from XML (fast-xml-parser returns object for single items)
-    const ensureArray = (value: any): any[] => {
+    const ensureArray = (value: unknown): Record<string, unknown>[] => {
       if (!value) return []
-      return Array.isArray(value) ? value : [value]
+      const arr = Array.isArray(value) ? value : [value]
+      return arr.map(asRecord)
     }
+
+    // Helper to coerce an XML attribute (string | number | undefined) to a number
+    const toNumber = (value: unknown): number => {
+      const n = typeof value === 'number' ? value : parseFloat(String(value))
+      return Number.isNaN(n) ? 0 : n
+    }
+
+    // Helper to coerce an XML attribute to a string
+    const toString = (value: unknown): string =>
+      value === undefined || value === null ? '' : String(value)
+
+    const event = asRecord(xmlData['event'] ?? xmlData['context'])
+    const position = asRecord(event['position'])
+    const stats = event['stats']
 
     return {
       sessionId: this.state?.sessionId || '',
-      environment: event.environment || 'Unknown',
+      environment: typeof event['environment'] === 'string' ? event['environment'] : 'Unknown',
       position: {
-        x: parseFloat(event.position?.['@_x']) || 0,
-        y: parseFloat(event.position?.['@_y']) || 0,
-        z: parseFloat(event.position?.['@_z']) || 0,
+        x: toNumber(position['@_x']),
+        y: toNumber(position['@_y']),
+        z: toNumber(position['@_z']),
       },
-      visibleEntities: ensureArray(event.visibleEntities?.entity).map((e: any) => ({
-        id: e['@_id'],
-        type: e['@_type'],
+      visibleEntities: ensureArray(asRecord(event['visibleEntities'])['entity']).map((e) => ({
+        id: toString(e['@_id']),
+        type: toString(e['@_type']),
         position: {
-          x: parseFloat(e['@_x']) || 0,
-          y: parseFloat(e['@_y']) || 0,
+          x: toNumber(e['@_x']),
+          y: toNumber(e['@_y']),
         },
         properties: {},
       })),
-      inventory: ensureArray(event.inventory?.item).map((i: any) => ({
-        id: i['@_id'],
-        name: i['@_name'],
-        quantity: parseInt(i['@_quantity']) || 1,
+      inventory: ensureArray(asRecord(event['inventory'])['item']).map((i) => ({
+        id: toString(i['@_id']),
+        name: toString(i['@_name']),
+        quantity: i['@_quantity'] !== undefined ? toNumber(i['@_quantity']) || 1 : 1,
       })),
-      stats: event.stats || {},
+      stats: typeof stats === 'object' && stats !== null && !Array.isArray(stats)
+        ? (stats as GameState['stats'])
+        : {},
       activeQuests: [],
       availableActions: ['move', 'interact', 'attack', 'use_item', 'speak'],
       recentEvents: [],

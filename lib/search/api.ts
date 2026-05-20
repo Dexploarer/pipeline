@@ -2,6 +2,13 @@ import { npcIndex } from "./indexes"
 import { generateEmbedding } from "./embeddings"
 import type { NPC } from "../npc-types"
 
+// Shape of a single result returned by the Upstash vector index query
+interface VectorQueryResult {
+  id: number | string
+  score: number
+  metadata?: Record<string, unknown>
+}
+
 export interface SearchOptions {
   query: string
   filters?: {
@@ -80,8 +87,8 @@ export async function searchNPCs(options: SearchOptions): Promise<SearchResponse
 
     // Filter by minimum score and validate NPC metadata before mapping
     const results: SearchResult<NPC>[] = response
-      .filter((r: any) => r.score >= minScore && isValidNPC(r.metadata))
-      .map((r: any) => ({
+      .filter((r: VectorQueryResult) => r.score >= minScore && isValidNPC(r.metadata))
+      .map((r: VectorQueryResult) => ({
         id: String(r.id),
         score: r.score,
         data: r.metadata as NPC,
@@ -109,8 +116,8 @@ export async function searchNPCs(options: SearchOptions): Promise<SearchResponse
 export async function searchNPCsByText(query: string, npcs: NPC[]): Promise<NPC[]> {
   const lowerQuery = query.toLowerCase()
 
-  return npcs.filter((npc: any) => {
-    const personality = npc.personality as Record<string, unknown>
+  return npcs.filter((npc: NPC) => {
+    const personality = npc.personality
     const traits = Array.isArray(personality["traits"]) ? (personality["traits"] as string[]) : []
 
     return (

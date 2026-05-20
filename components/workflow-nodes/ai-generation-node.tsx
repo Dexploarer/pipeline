@@ -1,19 +1,19 @@
 'use client'
 
 import React from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Brain, Sparkles } from 'lucide-react'
 
-interface AIGenerationNodeData {
+type AIGenerationNodeData = {
   label: string
   model?: string
   prompt?: string
   temperature?: number
 }
 
-export function AIGenerationNode({ data, selected }: NodeProps<AIGenerationNodeData>) {
+export function AIGenerationNode({ data, selected }: NodeProps<Node<AIGenerationNodeData>>) {
   return (
     <Card
       className={`min-w-[250px] transition-all ${

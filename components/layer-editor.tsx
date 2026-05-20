@@ -8,12 +8,27 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Trash2 } from "lucide-react"
-import type { QuestObjective, QuestBranch, QuestTrigger, HistoricalEvent } from "@/lib/npc-types"
+import type {
+  QuestObjective,
+  QuestBranch,
+  QuestTrigger,
+  HistoricalEvent,
+  GameFlowLayer,
+  HistoryLayer,
+  RelationshipLayer,
+} from "@/lib/npc-types"
+
+// A single NPC relationship entry within the relationships layer.
+type NpcRelationship = RelationshipLayer["npcRelationships"][number]
+
+// The editor is shared across quest layers; whichever layer is being edited
+// is passed as `layerData`, so every layer field is optional here.
+type EditableLayer = Partial<GameFlowLayer> & Partial<HistoryLayer> & Partial<RelationshipLayer>
 
 type LayerEditorProps = {
   layerType: "gameflow" | "lore" | "history" | "relationships" | "economy" | "world-events"
-  layerData: any
-  onChange: (data: any) => void
+  layerData: EditableLayer
+  onChange: (data: EditableLayer) => void
 }
 
 export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps) {
@@ -54,8 +69,8 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       className="p-2 rounded border border-border bg-background text-sm"
                       value={obj.type}
                       onChange={(e) => {
-                        const updated = [...layerData.objectives]
-                        updated[idx] = { ...obj, type: e.target.value }
+                        const updated = [...(layerData.objectives ?? [])]
+                        updated[idx] = { ...obj, type: e.target.value as QuestObjective["type"] }
                         onChange({ ...layerData, objectives: updated })
                       }}
                     >
@@ -75,7 +90,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        const updated = layerData.objectives.filter((_: any, i: number) => i !== idx)
+                        const updated = (layerData.objectives ?? []).filter((_, i) => i !== idx)
                         onChange({ ...layerData, objectives: updated })
                       }}
                     >
@@ -86,7 +101,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                     placeholder="Objective description..."
                     value={obj.description}
                     onChange={(e) => {
-                      const updated = [...layerData.objectives]
+                      const updated = [...(layerData.objectives ?? [])]
                       updated[idx] = { ...obj, description: e.target.value }
                       onChange({ ...layerData, objectives: updated })
                     }}
@@ -96,7 +111,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Target"
                       value={obj.target || ""}
                       onChange={(e) => {
-                        const updated = [...layerData.objectives]
+                        const updated = [...(layerData.objectives ?? [])]
                         updated[idx] = { ...obj, target: e.target.value }
                         onChange({ ...layerData, objectives: updated })
                       }}
@@ -106,7 +121,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Quantity"
                       value={obj.quantity || ""}
                       onChange={(e) => {
-                        const updated = [...layerData.objectives]
+                        const updated = [...(layerData.objectives ?? [])]
                         updated[idx] = { ...obj, quantity: Number.parseInt(e.target.value) || undefined }
                         onChange({ ...layerData, objectives: updated })
                       }}
@@ -115,7 +130,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Location"
                       value={obj.location || ""}
                       onChange={(e) => {
-                        const updated = [...layerData.objectives]
+                        const updated = [...(layerData.objectives ?? [])]
                         updated[idx] = { ...obj, location: e.target.value }
                         onChange({ ...layerData, objectives: updated })
                       }}
@@ -159,7 +174,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        const updated = layerData.branches.filter((_: any, i: number) => i !== idx)
+                        const updated = (layerData.branches ?? []).filter((_, i) => i !== idx)
                         onChange({ ...layerData, branches: updated })
                       }}
                     >
@@ -170,7 +185,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                     placeholder="e.g., player.reputation > 50"
                     value={branch.condition}
                     onChange={(e) => {
-                      const updated = [...layerData.branches]
+                      const updated = [...(layerData.branches ?? [])]
                       updated[idx] = { ...branch, condition: e.target.value }
                       onChange({ ...layerData, branches: updated })
                     }}
@@ -182,7 +197,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                         placeholder="One per line..."
                         value={branch.outcomes.success.join("\n")}
                         onChange={(e) => {
-                          const updated = [...layerData.branches]
+                          const updated = [...(layerData.branches ?? [])]
                           updated[idx] = {
                             ...branch,
                             outcomes: {
@@ -202,7 +217,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                         placeholder="One per line..."
                         value={branch.outcomes.failure.join("\n")}
                         onChange={(e) => {
-                          const updated = [...layerData.branches]
+                          const updated = [...(layerData.branches ?? [])]
                           updated[idx] = {
                             ...branch,
                             outcomes: {
@@ -255,7 +270,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        const updated = layerData.triggers.filter((_: any, i: number) => i !== idx)
+                        const updated = (layerData.triggers ?? []).filter((_, i) => i !== idx)
                         onChange({ ...layerData, triggers: updated })
                       }}
                     >
@@ -267,7 +282,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Event"
                       value={trigger.event}
                       onChange={(e) => {
-                        const updated = [...layerData.triggers]
+                        const updated = [...(layerData.triggers ?? [])]
                         updated[idx] = { ...trigger, event: e.target.value }
                         onChange({ ...layerData, triggers: updated })
                       }}
@@ -276,7 +291,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Condition"
                       value={trigger.condition}
                       onChange={(e) => {
-                        const updated = [...layerData.triggers]
+                        const updated = [...(layerData.triggers ?? [])]
                         updated[idx] = { ...trigger, condition: e.target.value }
                         onChange({ ...layerData, triggers: updated })
                       }}
@@ -285,7 +300,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Action"
                       value={trigger.action}
                       onChange={(e) => {
-                        const updated = [...layerData.triggers]
+                        const updated = [...(layerData.triggers ?? [])]
                         updated[idx] = { ...trigger, action: e.target.value }
                         onChange({ ...layerData, triggers: updated })
                       }}
@@ -311,6 +326,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                     rewards: {
                       ...layerData.rewards,
                       experience: Number.parseInt(e.target.value) || 0,
+                      gold: layerData.rewards?.gold ?? 0,
                     },
                   })
                 }}
@@ -328,6 +344,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                     rewards: {
                       ...layerData.rewards,
                       gold: Number.parseInt(e.target.value) || 0,
+                      experience: layerData.rewards?.experience ?? 0,
                     },
                   })
                 }}
@@ -378,7 +395,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Event title..."
                       value={event.title}
                       onChange={(e) => {
-                        const updated = [...layerData.timeline]
+                        const updated = [...(layerData.timeline ?? [])]
                         updated[idx] = { ...event, title: e.target.value }
                         onChange({ ...layerData, timeline: updated })
                       }}
@@ -388,7 +405,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        const updated = layerData.timeline.filter((_: any, i: number) => i !== idx)
+                        const updated = (layerData.timeline ?? []).filter((_, i) => i !== idx)
                         onChange({ ...layerData, timeline: updated })
                       }}
                     >
@@ -400,7 +417,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Date"
                       value={event.date}
                       onChange={(e) => {
-                        const updated = [...layerData.timeline]
+                        const updated = [...(layerData.timeline ?? [])]
                         updated[idx] = { ...event, date: e.target.value }
                         onChange({ ...layerData, timeline: updated })
                       }}
@@ -409,7 +426,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Location"
                       value={event.location}
                       onChange={(e) => {
-                        const updated = [...layerData.timeline]
+                        const updated = [...(layerData.timeline ?? [])]
                         updated[idx] = { ...event, location: e.target.value }
                         onChange({ ...layerData, timeline: updated })
                       }}
@@ -418,8 +435,8 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       className="p-2 rounded border border-border bg-background text-sm"
                       value={event.impact}
                       onChange={(e) => {
-                        const updated = [...layerData.timeline]
-                        updated[idx] = { ...event, impact: e.target.value as any }
+                        const updated = [...(layerData.timeline ?? [])]
+                        updated[idx] = { ...event, impact: e.target.value as HistoricalEvent["impact"] }
                         onChange({ ...layerData, timeline: updated })
                       }}
                     >
@@ -433,7 +450,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                     placeholder="Event description..."
                     value={event.description}
                     onChange={(e) => {
-                      const updated = [...layerData.timeline]
+                      const updated = [...(layerData.timeline ?? [])]
                       updated[idx] = { ...event, description: e.target.value }
                       onChange({ ...layerData, timeline: updated })
                     }}
@@ -458,7 +475,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
               size="sm"
               variant="outline"
               onClick={() => {
-                const newRel = {
+                const newRel: NpcRelationship = {
                   npcId: `npc-${Date.now()}`,
                   name: "",
                   relationship: "neutral",
@@ -477,7 +494,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
             </Button>
           </div>
           <div className="space-y-3">
-            {(layerData.npcRelationships || []).map((rel: any, idx: number) => (
+            {(layerData.npcRelationships || []).map((rel, idx) => (
               <Card key={rel.npcId} className="p-4 bg-muted/50">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -485,7 +502,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="NPC Name"
                       value={rel.name}
                       onChange={(e) => {
-                        const updated = [...layerData.npcRelationships]
+                        const updated = [...(layerData.npcRelationships ?? [])]
                         updated[idx] = { ...rel, name: e.target.value }
                         onChange({ ...layerData, npcRelationships: updated })
                       }}
@@ -494,7 +511,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        const updated = layerData.npcRelationships.filter((_: any, i: number) => i !== idx)
+                        const updated = (layerData.npcRelationships ?? []).filter((_, i) => i !== idx)
                         onChange({ ...layerData, npcRelationships: updated })
                       }}
                     >
@@ -506,8 +523,8 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       className="p-2 rounded border border-border bg-background text-sm"
                       value={rel.relationship}
                       onChange={(e) => {
-                        const updated = [...layerData.npcRelationships]
-                        updated[idx] = { ...rel, relationship: e.target.value }
+                        const updated = [...(layerData.npcRelationships ?? [])]
+                        updated[idx] = { ...rel, relationship: e.target.value as NpcRelationship["relationship"] }
                         onChange({ ...layerData, npcRelationships: updated })
                       }}
                     >
@@ -524,7 +541,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       placeholder="Strength (-100 to 100)"
                       value={rel.strength}
                       onChange={(e) => {
-                        const updated = [...layerData.npcRelationships]
+                        const updated = [...(layerData.npcRelationships ?? [])]
                         updated[idx] = { ...rel, strength: Number.parseInt(e.target.value) || 0 }
                         onChange({ ...layerData, npcRelationships: updated })
                       }}
@@ -533,8 +550,8 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                       className="p-2 rounded border border-border bg-background text-sm"
                       value={rel.questRole}
                       onChange={(e) => {
-                        const updated = [...layerData.npcRelationships]
-                        updated[idx] = { ...rel, questRole: e.target.value }
+                        const updated = [...(layerData.npcRelationships ?? [])]
+                        updated[idx] = { ...rel, questRole: e.target.value as NpcRelationship["questRole"] }
                         onChange({ ...layerData, npcRelationships: updated })
                       }}
                     >
@@ -549,7 +566,7 @@ export function LayerEditor({ layerType, layerData, onChange }: LayerEditorProps
                     placeholder="Relationship history..."
                     value={rel.history}
                     onChange={(e) => {
-                      const updated = [...layerData.npcRelationships]
+                      const updated = [...(layerData.npcRelationships ?? [])]
                       updated[idx] = { ...rel, history: e.target.value }
                       onChange({ ...layerData, npcRelationships: updated })
                     }}

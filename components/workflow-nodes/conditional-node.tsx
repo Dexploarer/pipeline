@@ -1,18 +1,18 @@
 'use client'
 
 import React from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { GitBranch, Code } from 'lucide-react'
 
-interface ConditionalNodeData {
+type ConditionalNodeData = {
   label: string
   condition?: string
   operator?: 'equals' | 'contains' | 'greaterThan' | 'lessThan'
 }
 
-export function ConditionalNode({ data, selected }: NodeProps<ConditionalNodeData>) {
+export function ConditionalNode({ data, selected }: NodeProps<Node<ConditionalNodeData>>) {
   return (
     <Card
       className={`min-w-[250px] transition-all ${

@@ -31,7 +31,7 @@ export async function getAllZones(): Promise<Zone[]> {
 
 export async function updateZone(id: string, data: Partial<Zone>): Promise<Zone> {
   const updates: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let paramIndex = 1
 
   if (data.name !== undefined) {

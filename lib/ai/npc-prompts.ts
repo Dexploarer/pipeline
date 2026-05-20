@@ -240,6 +240,7 @@ export const parseNPCDialogueResponse = (resp: string) => {
     id,
     text,
     conditions,
+    effects,
     responses
   };
 };
@@ -354,7 +355,7 @@ export const parseNPCBehaviorResponse = (resp: string) => {
 
   // Extract all schedule entries [time:location:activity]
   // Format: [08:00:tavern:serving_drinks] - note the time has TWO colons (HH:MM:location:activity)
-  const scheduleMatches = scheduleSection ? scheduleSection[1].match(/\[([^\]]+)\]/g) : [];
+  const scheduleMatches = scheduleSection?.[1]?.match(/\[([^\]]+)\]/g) ?? [];
   const schedule = scheduleMatches
     .map(s => {
       const cleaned = s.replace(/[\[\]]/g, '');
@@ -372,7 +373,7 @@ export const parseNPCBehaviorResponse = (resp: string) => {
     .filter((s): s is NonNullable<typeof s> => s !== null && !!s.time && !!s.location);
 
   // Extract all reaction entries [trigger:response:priority]
-  const reactionMatches = reactionsSection ? reactionsSection[1].match(/\[([^\]]+)\]/g) : [];
+  const reactionMatches = reactionsSection?.[1]?.match(/\[([^\]]+)\]/g) ?? [];
   const reactions = reactionMatches
     .map(r => {
       const cleaned = r.replace(/[\[\]]/g, '');

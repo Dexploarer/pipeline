@@ -8,24 +8,27 @@ import { Users, Plus, Sparkles } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useRelationshipStore } from "@/lib/stores/relationship-store"
+import { useRelationshipStore, type Relationship } from "@/lib/stores/relationship-store"
 import { CrudActions } from "./shared/crud-actions"
 import { EditDialog } from "./shared/edit-dialog"
+
+// A new relationship being composed in the add form (id assigned on save).
+type NewRelationship = Omit<Relationship, "id">
 
 export function RelationshipGraph() {
   const { relationships, addRelationship, updateRelationship, deleteRelationship } = useRelationshipStore()
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [newRel, setNewRel] = useState({
+  const [newRel, setNewRel] = useState<NewRelationship>({
     from: "",
     to: "",
-    type: "neutral" as const,
+    type: "neutral",
     strength: 0,
     description: "",
   })
 
-  const getRelationshipColor = (type: string) => {
-    const colors = {
+  const getRelationshipColor = (type: Relationship["type"]) => {
+    const colors: Record<Relationship["type"], string> = {
       ally: "text-green-500",
       rival: "text-orange-500",
       neutral: "text-gray-500",
@@ -34,7 +37,7 @@ export function RelationshipGraph() {
       romantic: "text-pink-500",
       mentor: "text-purple-500",
     }
-    return colors[type as keyof typeof colors]
+    return colors[type]
   }
 
   const handleSaveRelationship = () => {
@@ -167,7 +170,10 @@ export function RelationshipGraph() {
                   onChange={(e) => setNewRel({ ...newRel, to: e.target.value })}
                 />
               </div>
-              <Select value={newRel.type} onValueChange={(value: any) => setNewRel({ ...newRel, type: value })}>
+              <Select
+                value={newRel.type}
+                onValueChange={(value) => setNewRel({ ...newRel, type: value as Relationship["type"] })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -259,7 +265,7 @@ export function RelationshipGraph() {
             </div>
             <Select
               value={editingRel.type}
-              onValueChange={(value: any) => updateRelationship(editingId!, { type: value })}
+              onValueChange={(value) => updateRelationship(editingId!, { type: value as Relationship["type"] })}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -293,12 +299,14 @@ export function RelationshipGraph() {
       <Card className="p-6 border-border bg-card">
         <h4 className="font-semibold mb-3">Relationship Types</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {["ally", "rival", "neutral", "enemy", "family", "romantic", "mentor"].map((type) => (
-            <div key={type} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${getRelationshipColor(type as any).replace("text-", "bg-")}`} />
-              <span className="text-sm capitalize">{type}</span>
-            </div>
-          ))}
+          {(["ally", "rival", "neutral", "enemy", "family", "romantic", "mentor"] as Relationship["type"][]).map(
+            (type) => (
+              <div key={type} className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${getRelationshipColor(type).replace("text-", "bg-")}`} />
+                <span className="text-sm capitalize">{type}</span>
+              </div>
+            ),
+          )}
         </div>
       </Card>
     </div>

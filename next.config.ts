@@ -4,14 +4,19 @@ import type { NextConfig } from "next";
 import "./lib/config/env";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  experimental: {
-    // Enable strict mode for better error detection
-    strictNextHead: true,
-  },
-
-  // API body size limit (10MB default)
+  // Packages that should not be bundled by the server build
   serverExternalPackages: [],
+
+  // The optional `@sentry/nextjs` integration is loaded via a dynamic import
+  // with a computed specifier. Webpack flags this as a "Critical dependency";
+  // the warning is benign because the module is intentionally optional.
+  webpack(config) {
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      { module: /lib[\\/]monitoring[\\/]sentry/ },
+    ];
+    return config;
+  },
 
   // Security headers
   async headers() {

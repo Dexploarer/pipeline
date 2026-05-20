@@ -23,7 +23,18 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react'
-import type { AgentConfig, AgentStreamChunk } from '@/lib/agents/types'
+import type { AgentConfig, AgentPersonality, AgentStreamChunk } from '@/lib/agents/types'
+
+// Aggregate gameplay statistics for an agent session, as returned by the
+// session API (mirrors AgentEngine.getStatistics()).
+type SessionStatistics = {
+  totalActions: number
+  totalReward: number
+  averageReward: number
+  duration: number
+  actionsPerMinute: number
+  successRate: number
+}
 
 export default function AgentsPage() {
   const [agentConfig, setAgentConfig] = useState<Partial<AgentConfig>>({
@@ -52,7 +63,7 @@ export default function AgentsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [streamMessages, setStreamMessages] = useState<AgentStreamChunk[]>([])
-  const [sessionStats, setSessionStats] = useState<any>(null)
+  const [sessionStats, setSessionStats] = useState<SessionStatistics | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -333,7 +344,7 @@ export default function AgentsPage() {
                         ...agentConfig,
                         personality: {
                           ...agentConfig.personality!,
-                          playStyle: value as any,
+                          playStyle: value as AgentPersonality['playStyle'],
                         },
                       })
                     }
@@ -483,7 +494,7 @@ export default function AgentsPage() {
                   <Zap className="w-4 h-4" />
                   <AlertTitle>Agent Ready!</AlertTitle>
                   <AlertDescription>
-                    Session ID: {sessionId}. Go to the "Play Game" tab to start.
+                    Session ID: {sessionId}. Go to the &quot;Play Game&quot; tab to start.
                   </AlertDescription>
                 </Alert>
               )}
@@ -506,7 +517,7 @@ export default function AgentsPage() {
                     <AlertCircle className="w-4 h-4" />
                     <AlertTitle>No Active Session</AlertTitle>
                     <AlertDescription>
-                      Create an agent first in the "Create Agent" tab.
+                      Create an agent first in the &quot;Create Agent&quot; tab.
                     </AlertDescription>
                   </Alert>
                 ) : (

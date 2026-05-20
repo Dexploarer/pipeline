@@ -41,7 +41,7 @@ export interface ExportOptions {
 
 export interface ExportResult {
   success: boolean
-  data?: any
+  data?: string
   filename: string
   mimeType: string
   size: number
@@ -188,7 +188,7 @@ export class UnifiedExporter {
   /**
    * Export as JSON
    */
-  private exportAsJSON(data: any, basename: string, options: ExportOptions): ExportResult {
+  private exportAsJSON(data: unknown, basename: string, options: ExportOptions): ExportResult {
     const json = options.pretty
       ? JSON.stringify(data, null, 2)
       : JSON.stringify(data)
@@ -209,7 +209,7 @@ export class UnifiedExporter {
   /**
    * Export as TypeScript
    */
-  private exportAsTypeScript(data: any, basename: string, _options: ExportOptions): ExportResult {
+  private exportAsTypeScript(data: unknown, basename: string, _options: ExportOptions): ExportResult {
     const variableName = this.toCamelCase(basename)
     const typescript = `export const ${variableName} = ${JSON.stringify(data, null, 2)} as const;`
 
@@ -229,7 +229,7 @@ export class UnifiedExporter {
   /**
    * Export as YAML
    */
-  private exportAsYAML(data: any, basename: string, _options: ExportOptions): ExportResult {
+  private exportAsYAML(data: unknown, basename: string, _options: ExportOptions): ExportResult {
     const yaml = this.jsonToYAML(data, 0)
 
     const size = typeof TextEncoder !== "undefined"
@@ -438,7 +438,7 @@ ${entry.content}
       .replace(/\s+/g, "")
   }
 
-  private jsonToYAML(obj: any, indent: number): string {
+  private jsonToYAML(obj: unknown, indent: number): string {
     const spaces = "  ".repeat(indent)
     let yaml = ""
 
@@ -482,9 +482,21 @@ export function createExporter(): UnifiedExporter {
 // CONVENIENCE FUNCTIONS
 // ============================================================================
 
-export async function exportToFile(
-  data: any,
-  type: "npc" | "quest" | "dialogue" | "lore" | "zone" | "pack",
+/**
+ * Maps each {@link exportToFile} `type` discriminant to its expected payload type.
+ */
+interface ExportPayloadMap {
+  npc: NPCScript
+  quest: QuestDefinition
+  dialogue: DialogueNode[]
+  lore: LoreEntry[]
+  zone: WorldZone
+  pack: ContentPack
+}
+
+export async function exportToFile<T extends keyof ExportPayloadMap>(
+  data: ExportPayloadMap[T],
+  type: T,
   format: ExportFormat,
   options: Partial<ExportOptions> = {}
 ): Promise<ExportResult> {
@@ -498,15 +510,15 @@ export async function exportToFile(
 
   switch (type) {
     case "npc":
-      return exporter.exportNPC(data, fullOptions)
+      return exporter.exportNPC(data as NPCScript, fullOptions)
     case "quest":
-      return exporter.exportQuest(data, fullOptions)
+      return exporter.exportQuest(data as QuestDefinition, fullOptions)
     case "dialogue":
-      return exporter.exportDialogue(data, fullOptions)
+      return exporter.exportDialogue(data as DialogueNode[], fullOptions)
     case "lore":
-      return exporter.exportLore(data, fullOptions)
+      return exporter.exportLore(data as LoreEntry[], fullOptions)
     case "pack":
-      return exporter.exportContentPack(data, fullOptions)
+      return exporter.exportContentPack(data as ContentPack, fullOptions)
     default:
       throw new Error(`Unknown export type: ${type}`)
   }

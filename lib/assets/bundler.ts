@@ -1,8 +1,10 @@
 import { put } from "@vercel/blob"
-import type { ContentPack } from "../npc-types"
+import type { ContentPack, Zone, NPC } from "../npc-types"
 import * as npcRepo from "../db/repositories/npcs"
 import * as questRepo from "../db/repositories/quests"
+import type { Quest } from "../db/repositories/quests"
 import * as loreRepo from "../db/repositories/lore"
+import type { LoreEntry } from "../db/repositories/lore"
 import * as zoneRepo from "../db/repositories/zones"
 
 export interface BundleManifest {
@@ -10,10 +12,10 @@ export interface BundleManifest {
   version: string
   description?: string
   createdAt: string
-  zones: any[]
-  npcs: any[]
-  quests: any[]
-  lore: any[]
+  zones: Zone[]
+  npcs: NPC[]
+  quests: Quest[]
+  lore: LoreEntry[]
   assets: {
     [key: string]: string
   }
@@ -34,10 +36,10 @@ export async function createContentPackBundle(pack: ContentPack): Promise<string
       version: pack.version,
       description: pack.description,
       createdAt: new Date().toISOString(),
-      zones: zones.filter(Boolean),
-      npcs: npcs.filter(Boolean),
-      quests: quests.filter(Boolean),
-      lore: lore.filter(Boolean),
+      zones: zones.filter((z): z is Zone => z !== null),
+      npcs: npcs.filter((n): n is NPC => n !== null),
+      quests: quests.filter((q): q is Quest => q !== null),
+      lore: lore.filter((l): l is LoreEntry => l !== null),
       assets: {},
     }
 

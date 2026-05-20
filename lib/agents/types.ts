@@ -8,6 +8,8 @@
  * - Agents learn from outcomes
  */
 
+import type { ZodType } from "zod"
+
 /**
  * Game state that agents can observe
  */
@@ -202,7 +204,7 @@ export interface AgentTool {
   /** Tool description for LLM */
   description: string
   /** Input schema (Zod schema) */
-  parameters: Record<string, unknown>
+  parameters: ZodType
   /** Tool execution function */
   execute: (parameters: Record<string, unknown>, gameState: GameState) => Promise<ActionResult>
 }

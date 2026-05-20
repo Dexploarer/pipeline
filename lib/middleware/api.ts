@@ -26,9 +26,9 @@ export interface ApiContext {
 
 export interface MiddlewareOptions {
   validation?: {
-    body?: z.ZodType<any>
-    query?: z.ZodType<any>
-    params?: z.ZodType<any>
+    body?: z.ZodType<unknown>
+    query?: z.ZodType<unknown>
+    params?: z.ZodType<unknown>
   }
   auth?: boolean
   rateLimit?: {
@@ -181,7 +181,7 @@ async function validateRequestData(
     }
 
     return { success: true }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: new ValidationError("Request validation failed"),

@@ -214,7 +214,6 @@ async function generateValidatorCode(
  */
 function compileAction(definition: ActionDefinition): Action {
   // Use Function constructor to compile code strings
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const handler = new Function(
     "runtime",
     "message",
@@ -224,7 +223,6 @@ function compileAction(definition: ActionDefinition): Action {
     `return (${definition.handlerCode})(runtime, message, state, options, callback)`
   ) as Action["handler"]
 
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const validate = new Function(
     "runtime",
     "message",

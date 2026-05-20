@@ -1,4 +1,3 @@
-// @ts-ignore - @upstash/vector doesn't have type declarations
 import { Index } from "@upstash/vector"
 
 // Validate environment variables at startup

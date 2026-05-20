@@ -7,7 +7,7 @@ export interface AuditLog {
   action: "create" | "update" | "delete"
   entityType: string
   entityId: string
-  changes?: any
+  changes?: Record<string, unknown>
   timestamp: Date
 }
 
@@ -16,7 +16,7 @@ export async function createAuditLog(
   action: AuditLog["action"],
   entityType: string,
   entityId: string,
-  changes?: any,
+  changes?: Record<string, unknown>,
 ): Promise<void> {
   try {
     const userId = await getUserId()

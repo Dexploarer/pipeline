@@ -157,13 +157,13 @@ export class WorkflowExecutor {
     }
   }
 
-  private async executeTriggerNode(node: Node, context: WorkflowContext): Promise<unknown> {
+  private async executeTriggerNode(_node: Node, context: WorkflowContext): Promise<unknown> {
     // Trigger node just passes through the input
     return context.input
   }
 
   private async executeAIGenerationNode(node: Node, context: WorkflowContext): Promise<unknown> {
-    const config = node.data as AIGenerationConfig
+    const config = node.data as unknown as AIGenerationConfig
 
     // Call the AI generation API
     const response = await fetch('/api/workflow/ai-generate', {
@@ -206,7 +206,7 @@ export class WorkflowExecutor {
   }
 
   private async executeExportNode(node: Node, context: WorkflowContext): Promise<unknown> {
-    const config = node.data as ExportConfig
+    const config = node.data as unknown as ExportConfig
 
     // Call the export API
     const response = await fetch('/api/workflow/export', {
@@ -225,7 +225,7 @@ export class WorkflowExecutor {
     return response.json()
   }
 
-  private async executeConditionalNode(node: Node, context: WorkflowContext): Promise<unknown> {
+  private async executeConditionalNode(node: Node, _context: WorkflowContext): Promise<unknown> {
     const { condition, operator } = node.data
 
     // Evaluate the condition based on previous results
