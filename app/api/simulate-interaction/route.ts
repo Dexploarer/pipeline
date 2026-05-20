@@ -30,8 +30,8 @@ export async function POST(request: Request) {
     // Extract dialogues with safe fallbacks
     const dialogues = Array.isArray(npcScript.dialogues) ? npcScript.dialogues : []
     const dialogueTexts = dialogues
-      .map((d: any) => d?.text)
-      .filter((text: any): text is string => typeof text === "string")
+      .map((d: unknown) => (d as { text?: unknown } | null | undefined)?.text)
+      .filter((text: unknown): text is string => typeof text === "string")
 
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",

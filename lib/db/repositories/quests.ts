@@ -72,7 +72,7 @@ export async function getQuestsByZone(zoneId: string): Promise<Quest[]> {
 
 export async function updateQuest(id: string, data: Partial<Quest>): Promise<Quest> {
   const updates: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let paramIndex = 1
 
   if (data.title !== undefined) {

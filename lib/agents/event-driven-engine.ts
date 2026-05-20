@@ -430,7 +430,7 @@ export class EventDrivenAgentEngine {
     const memory: MemoryEntry = {
       id: `mem_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       sessionId,
-      type: type as any,
+      type: type as MemoryEntry['type'],
       xmlContent,
       learnedAt: new Date(),
       confidence,
@@ -511,38 +511,59 @@ export class EventDrivenAgentEngine {
   /**
    * Reconstruct game state from XML data (helper)
    */
-  private reconstructGameState(xmlData: any): GameState {
-    const event = xmlData.event || xmlData.context
+  private reconstructGameState(xmlData: Record<string, unknown>): GameState {
+    // Helper: narrow an unknown value to an indexable record
+    const asRecord = (value: unknown): Record<string, unknown> =>
+      typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {}
 
     // Helper to ensure array from XML (fast-xml-parser returns object for single items)
-    const ensureArray = (value: any): any[] => {
+    const ensureArray = (value: unknown): Record<string, unknown>[] => {
       if (!value) return []
-      return Array.isArray(value) ? value : [value]
+      const arr = Array.isArray(value) ? value : [value]
+      return arr.map(asRecord)
     }
+
+    // Helper to coerce an XML attribute (string | number | undefined) to a number
+    const toNumber = (value: unknown): number => {
+      const n = typeof value === 'number' ? value : parseFloat(String(value))
+      return Number.isNaN(n) ? 0 : n
+    }
+
+    // Helper to coerce an XML attribute to a string
+    const toString = (value: unknown): string =>
+      value === undefined || value === null ? '' : String(value)
+
+    const event = asRecord(xmlData['event'] ?? xmlData['context'])
+    const position = asRecord(event['position'])
+    const stats = event['stats']
 
     return {
       sessionId: this.state?.sessionId || '',
-      environment: event.environment || 'Unknown',
+      environment: typeof event['environment'] === 'string' ? event['environment'] : 'Unknown',
       position: {
-        x: parseFloat(event.position?.['@_x']) || 0,
-        y: parseFloat(event.position?.['@_y']) || 0,
-        z: parseFloat(event.position?.['@_z']) || 0,
+        x: toNumber(position['@_x']),
+        y: toNumber(position['@_y']),
+        z: toNumber(position['@_z']),
       },
-      visibleEntities: ensureArray(event.visibleEntities?.entity).map((e: any) => ({
-        id: e['@_id'],
-        type: e['@_type'],
+      visibleEntities: ensureArray(asRecord(event['visibleEntities'])['entity']).map((e) => ({
+        id: toString(e['@_id']),
+        type: toString(e['@_type']),
         position: {
-          x: parseFloat(e['@_x']) || 0,
-          y: parseFloat(e['@_y']) || 0,
+          x: toNumber(e['@_x']),
+          y: toNumber(e['@_y']),
         },
         properties: {},
       })),
-      inventory: ensureArray(event.inventory?.item).map((i: any) => ({
-        id: i['@_id'],
-        name: i['@_name'],
-        quantity: parseInt(i['@_quantity']) || 1,
+      inventory: ensureArray(asRecord(event['inventory'])['item']).map((i) => ({
+        id: toString(i['@_id']),
+        name: toString(i['@_name']),
+        quantity: i['@_quantity'] !== undefined ? toNumber(i['@_quantity']) || 1 : 1,
       })),
-      stats: event.stats || {},
+      stats: typeof stats === 'object' && stats !== null && !Array.isArray(stats)
+        ? (stats as GameState['stats'])
+        : {},
       activeQuests: [],
       availableActions: ['move', 'interact', 'attack', 'use_item', 'speak'],
       recentEvents: [],

@@ -256,7 +256,7 @@ export class CacheClient {
   }
 
   // Execute Lua script (for atomic operations)
-  async eval(script: string, keys: string[], args: (string | number)[]): Promise<any> {
+  async eval(script: string, keys: string[], args: (string | number)[]): Promise<unknown> {
     try {
       return await this.getClient().eval(script, keys, args)
     } catch (error) {

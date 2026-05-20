@@ -10,7 +10,7 @@ interface ContentPack {
   loreIds: string[]
   version: string
   bundleUrl?: string
-  metadata?: any
+  metadata?: Record<string, unknown>
   createdAt: Date
   updatedAt: Date
 }
@@ -49,7 +49,7 @@ export async function getAllContentPacks(): Promise<ContentPack[]> {
 
 export async function updateContentPack(id: string, data: Partial<ContentPack>): Promise<ContentPack> {
   const updates: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let paramIndex = 1
 
   if (data.name !== undefined) {

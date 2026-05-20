@@ -32,10 +32,6 @@ const eslintConfig = [
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      // The codebase has a number of pre-existing `any` usages. Surface them
-      // as warnings rather than blocking errors so they can be paid down
-      // incrementally.
-      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 ];

@@ -3,16 +3,37 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+/** Voice configuration attached to workflow results */
+interface WorkflowVoiceConfig {
+  voiceId?: string
+  agent?: { agentId?: string }
+}
+
+/** NPC data produced by the workflow, consumed by the format-specific exporters */
+interface WorkflowResults {
+  name?: string
+  personality?: string
+  dialoguePatterns?: string[]
+  voice?: WorkflowVoiceConfig
+  backstory?: string[]
+  lore?: string[]
+}
+
+interface ExportRequestBody {
+  exportConfig?: { formats?: string[] }
+  workflowResults?: WorkflowResults
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const body: ExportRequestBody = await req.json()
     const { exportConfig, workflowResults } = body
 
     if (!exportConfig?.formats || exportConfig.formats.length === 0) {
       return NextResponse.json({ error: 'Export formats are required' }, { status: 400 })
     }
 
-    const exports: Record<string, any> = {}
+    const exports: Record<string, unknown> = {}
 
     for (const format of exportConfig.formats) {
       switch (format) {
@@ -53,12 +74,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function formatForUnity(data: any) {
+function formatForUnity(data: WorkflowResults | undefined) {
   return {
-    npcName: data.name || 'Unknown NPC',
-    personality: data.personality || '',
-    dialoguePatterns: data.dialoguePatterns || [],
-    voiceConfig: data.voice ? {
+    npcName: data?.name || 'Unknown NPC',
+    personality: data?.personality || '',
+    dialoguePatterns: data?.dialoguePatterns || [],
+    voiceConfig: data?.voice ? {
       voiceId: data.voice.voiceId,
       agentId: data.voice.agent?.agentId,
     } : null,
@@ -69,13 +90,13 @@ function formatForUnity(data: any) {
   }
 }
 
-function formatForUnreal(data: any) {
+function formatForUnreal(data: WorkflowResults | undefined) {
   return {
     NPCData: {
-      DisplayName: data.name || 'Unknown NPC',
-      PersonalityTraits: data.personality || '',
-      DialogueOptions: data.dialoguePatterns || [],
-      VoiceSettings: data.voice || null,
+      DisplayName: data?.name || 'Unknown NPC',
+      PersonalityTraits: data?.personality || '',
+      DialogueOptions: data?.dialoguePatterns || [],
+      VoiceSettings: data?.voice || null,
     },
     Metadata: {
       ExportedAt: new Date().toISOString(),
@@ -84,12 +105,12 @@ function formatForUnreal(data: any) {
   }
 }
 
-function formatForGodot(data: any) {
+function formatForGodot(data: WorkflowResults | undefined) {
   return {
-    npc_name: data.name || 'Unknown NPC',
-    personality: data.personality || '',
-    dialogue_patterns: data.dialoguePatterns || [],
-    voice_config: data.voice || null,
+    npc_name: data?.name || 'Unknown NPC',
+    personality: data?.personality || '',
+    dialogue_patterns: data?.dialoguePatterns || [],
+    voice_config: data?.voice || null,
     _metadata: {
       generated_at: new Date().toISOString(),
       format: 'godot',
@@ -97,14 +118,14 @@ function formatForGodot(data: any) {
   }
 }
 
-function formatForElizaOS(data: any) {
+function formatForElizaOS(data: WorkflowResults | undefined) {
   return {
-    name: data.name || 'Unknown NPC',
-    description: data.personality || '',
-    system: `You are ${data.name}. ${data.personality}`,
-    bio: data.backstory || [],
-    lore: data.lore || [],
-    messageExamples: (data.dialoguePatterns || []).map((pattern: string) => ({
+    name: data?.name || 'Unknown NPC',
+    description: data?.personality || '',
+    system: `You are ${data?.name}. ${data?.personality}`,
+    bio: data?.backstory || [],
+    lore: data?.lore || [],
+    messageExamples: (data?.dialoguePatterns || []).map((pattern: string) => ({
       user: '{{user1}}',
       content: { text: pattern },
     })),
@@ -115,7 +136,7 @@ function formatForElizaOS(data: any) {
       post: ['descriptive'],
     },
     adjectives: ['unique', 'memorable', 'engaging'],
-    voice: data.voice ? {
+    voice: data?.voice ? {
       model: 'elevenlabs',
       voiceId: data.voice.voiceId,
       agentId: data.voice.agent?.agentId,

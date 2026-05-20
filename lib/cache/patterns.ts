@@ -67,14 +67,18 @@ export async function invalidateZone(zoneId: string): Promise<void> {
   }
 }
 
+// Entity shape required for cache warming - must carry an `id`
+type CacheableEntity = { id: string | number } & Record<string, unknown>
+
 // Warm cache with frequently accessed data
-export async function warmCache(entityType: string, entities: any[]): Promise<void> {
+export async function warmCache(entityType: string, entities: unknown[]): Promise<void> {
   // Validate entities have defined IDs before building cache entries
-  const validEntities = entities.filter((entity) => {
-    if (!entity || entity.id === undefined || entity.id === null) {
+  const validEntities = entities.filter((entity): entity is CacheableEntity => {
+    if (typeof entity !== 'object' || entity === null) {
       return false
     }
-    return true
+    const id = (entity as Record<string, unknown>)['id']
+    return id !== undefined && id !== null
   })
 
   const skippedCount = entities.length - validEntities.length
@@ -82,7 +86,7 @@ export async function warmCache(entityType: string, entities: any[]): Promise<vo
     console.warn(`[v0] Skipped ${skippedCount} ${entityType} entities with missing IDs during cache warming`)
   }
 
-  const entries: [string, any, number][] = validEntities.map((entity) => [
+  const entries: [string, unknown, number][] = validEntities.map((entity) => [
     `${entityType}:${entity.id}`,
     entity,
     CacheTTL.ENTITY,
@@ -93,7 +97,7 @@ export async function warmCache(entityType: string, entities: any[]): Promise<vo
 }
 
 // Cache AI generation results
-export async function cacheAIGeneration(key: string, result: any): Promise<void> {
+export async function cacheAIGeneration(key: string, result: unknown): Promise<void> {
   await cache.set(key, result, CacheTTL.AI_GENERATION)
 }
 

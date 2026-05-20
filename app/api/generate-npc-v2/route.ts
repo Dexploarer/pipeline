@@ -147,7 +147,7 @@ export async function POST(request: Request) {
 
     // ===== STAGE 4: RELATIONSHIPS =====
     console.log("[NPC-V2] Stage 4: Generating relationships...")
-    let relationships: any[] = []
+    let relationships: ReturnType<typeof parseNPCRelationshipResponse> = []
     try {
       const contextNPCs = context.npcs?.map((npc) => `"${npc.name}" (${npc.archetype})`) || []
       const result = await generateText({

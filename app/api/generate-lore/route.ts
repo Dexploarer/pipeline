@@ -92,9 +92,10 @@ ${context.npcs?.length ? `- Can reference these NPCs: ${context.npcs.map((n) => 
 Existing lore context:
 ${Array.isArray(existingLore) && existingLore.length > 0
   ? existingLore
-      .map((e: any) => {
-        const title = e?.title || "Untitled"
-        const content = typeof e?.content === "string" ? e.content.substring(0, 100) : ""
+      .map((e: unknown) => {
+        const entry = (e ?? {}) as { title?: unknown; content?: unknown }
+        const title = typeof entry.title === "string" ? entry.title : "Untitled"
+        const content = typeof entry.content === "string" ? entry.content.substring(0, 100) : ""
         return `- ${title}: ${content}${content ? "..." : ""}`
       })
       .join("\n")

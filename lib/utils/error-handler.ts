@@ -26,11 +26,19 @@ export class AppError extends Error {
 /**
  * Parse error from API response
  */
+interface ApiErrorPayload {
+  error?: string
+  message?: string
+  code?: string
+  errors?: Array<{ field: string; message: string }>
+  statusCode?: number
+}
+
 export async function parseApiError(response: Response): Promise<ApiError> {
-  let errorData: any
+  let errorData: ApiErrorPayload
 
   try {
-    errorData = await response.json()
+    errorData = (await response.json()) as ApiErrorPayload
   } catch {
     // If response is not JSON, use status text
     errorData = {

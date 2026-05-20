@@ -53,7 +53,7 @@ export async function getRelationshipsByZone(zoneId: string): Promise<Relationsh
 
 export async function updateRelationship(id: string, data: Partial<Relationship>): Promise<Relationship> {
   const updates: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let paramIndex = 1
 
   if (data.strength !== undefined) {

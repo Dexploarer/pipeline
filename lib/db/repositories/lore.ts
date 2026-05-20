@@ -57,7 +57,7 @@ export async function searchLoreByTags(tags: string[]): Promise<LoreEntry[]> {
 
 export async function updateLoreEntry(id: string, data: Partial<LoreEntry>): Promise<LoreEntry> {
   const updates: string[] = []
-  const values: any[] = []
+  const values: unknown[] = []
   let paramIndex = 1
 
   if (data.title !== undefined) {

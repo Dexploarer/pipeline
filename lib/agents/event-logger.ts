@@ -248,7 +248,7 @@ export class XMLEventLogger {
 
     const message: EventMessage = {
       id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-      type: type as any,
+      type: type as EventMessage['type'],
       xml,
       content: { text: content },
       from,

@@ -9,14 +9,37 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Layers, Sparkles, History, Users, Coins, Globe, Save, Download, Combine } from "lucide-react"
-import type { LayeredQuest } from "@/lib/npc-types"
+import type { LayeredQuest, GameFlowLayer } from "@/lib/npc-types"
 import { toast } from "@/hooks/use-toast"
 import { LayerEditor } from "./layer-editor"
 import { LayerCombiner } from "./layer-combiner"
 import { SelectModel } from "@/components/select-model"
 
+// Tab/layer identifiers used by the builder UI.
+type LayerType = "gameflow" | "lore" | "history" | "relationships" | "economy" | "world-events"
+
+// While editing, each layer is built up incrementally and may be partial.
+// Keyed by the builder's UI layer identifiers (note: "world-events", not "worldEvents").
+type DraftLayers = Partial<{
+  gameflow: Partial<LayeredQuest["layers"]["gameflow"]>
+  lore: Partial<LayeredQuest["layers"]["lore"]>
+  history: Partial<LayeredQuest["layers"]["history"]>
+  relationships: Partial<LayeredQuest["layers"]["relationships"]>
+  economy: Partial<NonNullable<LayeredQuest["layers"]["economy"]>>
+  "world-events": Partial<NonNullable<LayeredQuest["layers"]["worldEvents"]>>
+}>
+
+export type DraftLayerValue = DraftLayers[keyof DraftLayers]
+
+export type QuestDraft = Omit<Partial<LayeredQuest>, "layers"> & {
+  layers?: DraftLayers
+}
+
+// A draft as persisted to localStorage (includes a save timestamp).
+type QuestDraftStored = QuestDraft & { lastModified: number }
+
 export function LayeredQuestBuilder() {
-  const [quest, setQuest] = useState<Partial<LayeredQuest>>({
+  const [quest, setQuest] = useState<QuestDraft>({
     title: "",
     layers: {
       gameflow: {
@@ -55,7 +78,7 @@ export function LayeredQuestBuilder() {
   const [showCombiner, setShowCombiner] = useState(false)
   const [selectedModel, setSelectedModel] = useState<string>("anthropic/claude-sonnet-4")
 
-  const generateLayer = async (layerType: string) => {
+  const generateLayer = async (layerType: LayerType) => {
     setGenerating(true)
     try {
       const response = await fetch("/api/generate-quest-layer", {
@@ -75,20 +98,28 @@ export function LayeredQuestBuilder() {
         throw new Error(`API error: ${response.status} - ${errorText}`)
       }
 
-      const data = await response.json()
+      const data: unknown = await response.json()
 
       // Verify data shape and that layer exists
-      if (!data || typeof data.layer === 'undefined' || data.layer === null) {
+      if (
+        typeof data !== "object" ||
+        data === null ||
+        !("layer" in data) ||
+        (data as { layer: unknown }).layer === undefined ||
+        (data as { layer: unknown }).layer === null
+      ) {
         throw new Error("Invalid response: missing layer data")
       }
+
+      const generatedLayer = (data as { layer: DraftLayerValue }).layer
 
       // Safe merge that doesn't assume layers exists
       setQuest((prev) => ({
         ...prev,
         layers: {
           ...(prev.layers ?? {}),
-          [layerType]: data.layer,
-        } as any,
+          [layerType]: generatedLayer,
+        },
       }))
 
       toast({
@@ -118,8 +149,8 @@ export function LayeredQuestBuilder() {
     }
 
     try {
-      const drafts = JSON.parse(localStorage.getItem("quest-drafts") || "[]")
-      const draftIndex = drafts.findIndex((d: any) => d.title === quest.title)
+      const drafts: QuestDraftStored[] = JSON.parse(localStorage.getItem("quest-drafts") || "[]")
+      const draftIndex = drafts.findIndex((d) => d.title === quest.title)
 
       if (draftIndex >= 0) {
         drafts[draftIndex] = { ...quest, lastModified: Date.now() }
@@ -189,11 +220,13 @@ export function LayeredQuestBuilder() {
       return
     }
 
-    const combinedQuest: LayeredQuest = {
+    // The draft's layers may be partial, so the combined quest mirrors the
+    // draft layer shape rather than the fully-populated LayeredQuest layers.
+    const combinedQuest: Omit<LayeredQuest, "layers"> & { layers: DraftLayers } = {
       id: `quest-${Date.now()}`,
       title: quest.title,
       version: "1.0.0",
-      layers: quest.layers as any,
+      layers: quest.layers,
       metadata: {
         author: "Content Pipeline",
         createdAt: new Date().toISOString(),
@@ -259,7 +292,9 @@ export function LayeredQuestBuilder() {
         </div>
       </Card>
 
-      {showCombiner && <LayerCombiner quest={quest} onCombine={handleCombineLayers} />}
+      {showCombiner && (
+        <LayerCombiner quest={quest as Partial<LayeredQuest>} onCombine={handleCombineLayers} />
+      )}
 
       <Tabs value={activeLayer} onValueChange={setActiveLayer} className="w-full">
         <TabsList className="grid w-full grid-cols-6 bg-card border border-border">
@@ -314,9 +349,9 @@ export function LayeredQuestBuilder() {
                         ...(quest.layers ?? {}),
                         gameflow: {
                           ...(quest.layers?.gameflow ?? {}),
-                          difficulty: e.target.value as any,
-                        } as any,
-                      } as any,
+                          difficulty: e.target.value as GameFlowLayer["difficulty"],
+                        },
+                      },
                     })
                   }
                 >
@@ -340,8 +375,8 @@ export function LayeredQuestBuilder() {
                         gameflow: {
                           ...(quest.layers?.gameflow ?? {}),
                           estimatedDuration: Number.parseInt(e.target.value),
-                        } as any,
-                      } as any,
+                        },
+                      },
                     })
                   }
                   className="mt-2"
@@ -349,11 +384,11 @@ export function LayeredQuestBuilder() {
               </div>
               <LayerEditor
                 layerType="gameflow"
-                layerData={quest.layers?.gameflow}
+                layerData={quest.layers?.gameflow ?? {}}
                 onChange={(data) =>
                   setQuest({
                     ...quest,
-                    layers: { ...(quest.layers ?? {}), gameflow: data } as any,
+                    layers: { ...(quest.layers ?? {}), gameflow: data },
                   })
                 }
               />
@@ -386,8 +421,8 @@ export function LayeredQuestBuilder() {
                         lore: {
                           ...(quest.layers?.lore ?? {}),
                           summary: e.target.value,
-                        } as any,
-                      } as any,
+                        },
+                      },
                     })
                   }
                   placeholder="Brief narrative summary of the quest..."
@@ -407,8 +442,8 @@ export function LayeredQuestBuilder() {
                         lore: {
                           ...(quest.layers?.lore ?? {}),
                           culturalContext: e.target.value,
-                        } as any,
-                      } as any,
+                        },
+                      },
                     })
                   }
                   placeholder="Cultural and societal context..."
@@ -434,11 +469,11 @@ export function LayeredQuestBuilder() {
             </p>
             <LayerEditor
               layerType="history"
-              layerData={quest.layers?.history}
+              layerData={quest.layers?.history ?? {}}
               onChange={(data) =>
                 setQuest({
                   ...quest,
-                  layers: { ...(quest.layers ?? {}), history: data } as any,
+                  layers: { ...(quest.layers ?? {}), history: data },
                 })
               }
             />
@@ -459,11 +494,11 @@ export function LayeredQuestBuilder() {
             </p>
             <LayerEditor
               layerType="relationships"
-              layerData={quest.layers?.relationships}
+              layerData={quest.layers?.relationships ?? {}}
               onChange={(data) =>
                 setQuest({
                   ...quest,
-                  layers: { ...(quest.layers ?? {}), relationships: data } as any,
+                  layers: { ...(quest.layers ?? {}), relationships: data },
                 })
               }
             />

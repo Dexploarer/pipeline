@@ -135,7 +135,17 @@ export const listQuestsSchema = z.object({
 // DIALOGUE SCHEMAS
 // ============================================================================
 
-export const dialogueNodeSchema: z.ZodType<any> = z.lazy(() =>
+export interface DialogueNodeInput {
+  id: string
+  text: string
+  speaker: "npc" | "player"
+  responses?: DialogueNodeInput[]
+  conditions?: Record<string, unknown>
+  actions?: string[]
+  metadata?: Record<string, unknown>
+}
+
+export const dialogueNodeSchema: z.ZodType<DialogueNodeInput> = z.lazy(() =>
   z.object({
     id: z.string(),
     text: z.string().min(1).max(2000),

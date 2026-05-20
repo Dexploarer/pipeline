@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { AgentConfig } from '@/lib/agents/types'
+import type { AgentConfig, AgentPersonality } from '@/lib/agents/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -62,7 +62,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-function generateSystemPrompt(name: string, playStyle: string, _goals: any): string {
+function generateSystemPrompt(
+  name: string,
+  playStyle: string,
+  _goals: AgentPersonality['goals'] | undefined
+): string {
   return `You are ${name}, an advanced AI agent designed to play games autonomously.
 
 Your play style is ${playStyle}, which means you should make decisions that align with this approach.
