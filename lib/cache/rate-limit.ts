@@ -8,6 +8,7 @@ import { logger } from "@/lib/logging/logger"
 
 // In-memory fallback for when Redis is unavailable
 const inMemoryStore = new Map<string, { count: number; windowStart: number }>()
+let inMemoryCallCount = 0
 
 export interface RateLimitConfig {
   requests: number // Max requests (formerly 'limit')
@@ -55,6 +56,17 @@ export async function checkRateLimit(
     // In-memory fallback when Redis is unavailable
     const record = inMemoryStore.get(key)
     const windowMs = config.window * 1000
+
+    // Prune expired entries every 100th call or when map exceeds 1000 entries
+    inMemoryCallCount++
+    if (inMemoryCallCount >= 100 || inMemoryStore.size > 1000) {
+      inMemoryCallCount = 0
+      for (const [entryKey, entry] of inMemoryStore) {
+        if (now - entry.windowStart > windowMs) {
+          inMemoryStore.delete(entryKey)
+        }
+      }
+    }
 
     if (!record || now - record.windowStart > windowMs) {
       inMemoryStore.set(key, { count: 1, windowStart: now })
