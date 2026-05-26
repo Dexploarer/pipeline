@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
 
     // Execute the workflow
     const executor = new WorkflowExecutor()
-    const result = await executor.execute(nodes, edges, input || {})
+    const token = authHeader?.replace("Bearer ", "")
+    const result = await executor.execute(nodes, edges, input || {}, token)
 
     return NextResponse.json({
       success: result.status === 'completed',
