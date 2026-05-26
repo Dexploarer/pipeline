@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { WorkflowBuilder } from '@/components/workflow-builder'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Sparkles, Workflow, Mic2, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { Sparkles, Workflow, Mic2, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react'
 import type { Node, Edge } from '@xyflow/react'
 
 interface ExecutionResult {
@@ -63,6 +64,10 @@ export default function WorkflowStudioPage() {
     <div className="container mx-auto py-8 space-y-8">
       {/* Header */}
       <div className="space-y-4">
+        <Link href="/workflows" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Workflows
+        </Link>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold">Workflow Studio</h1>

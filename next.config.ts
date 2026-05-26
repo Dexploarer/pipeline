@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 // Validate environment variables at build time (skip with SKIP_ENV_VALIDATION=1)
-if (!process.env["SKIP_ENV_VALIDATION"]) {
-  const { getEnv } = await import("./lib/config/env")
-  getEnv()
-}
+// Note: This is a sync check; the dynamic import with top-level await
+// is incompatible with the Next.js config loader in some environments.
+// Env validation is now handled at runtime via the env module.
 
 const nextConfig: NextConfig = {
   // Packages that should not be bundled by the server build

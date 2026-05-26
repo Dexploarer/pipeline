@@ -1,15 +1,15 @@
-'use client'
+"use client"
 
-import { useState, useRef, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
+import { useState, useRef, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
 import {
   Bot,
   Play,
@@ -22,11 +22,9 @@ import {
   TrendingUp,
   AlertCircle,
   Loader2,
-} from 'lucide-react'
-import type { AgentConfig, AgentPersonality, AgentStreamChunk } from '@/lib/agents/types'
+} from "lucide-react"
+import type { AgentConfig, AgentPersonality, AgentStreamChunk } from "@/lib/agents/types"
 
-// Aggregate gameplay statistics for an agent session, as returned by the
-// session API (mirrors AgentEngine.getStatistics()).
 type SessionStatistics = {
   totalActions: number
   totalReward: number
@@ -39,12 +37,12 @@ type SessionStatistics = {
 export default function AgentsPage() {
   const [agentConfig, setAgentConfig] = useState<Partial<AgentConfig>>({
     personality: {
-      name: 'Explorer',
-      traits: ['Curious', 'Strategic', 'Brave'],
-      playStyle: 'exploratory',
+      name: "Explorer",
+      traits: ["Curious", "Strategic", "Brave"],
+      playStyle: "exploratory",
       goals: {
-        primaryGoal: 'Discover all locations and complete quests',
-        secondaryGoals: ['Collect rare items', 'Level up efficiently'],
+        primaryGoal: "Discover all locations and complete quests",
+        secondaryGoals: ["Collect rare items", "Level up efficiently"],
       },
       preferences: {
         riskTolerance: 0.6,
@@ -52,9 +50,9 @@ export default function AgentsPage() {
         socialInteraction: 0.5,
         completionismLevel: 0.8,
       },
-      systemPrompt: '',
+      systemPrompt: "",
     },
-    model: 'claude-sonnet-4-5-20250929',
+    model: "claude-sonnet-4-5-20250929",
     temperature: 0.7,
     streaming: true,
   })
@@ -67,7 +65,7 @@ export default function AgentsPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   useEffect(() => {
@@ -77,9 +75,9 @@ export default function AgentsPage() {
   const handleCreateAgent = async () => {
     setIsCreating(true)
     try {
-      const response = await fetch('/api/agents/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/agents/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(agentConfig.personality),
       })
 
@@ -88,10 +86,9 @@ export default function AgentsPage() {
       if (data.success) {
         setAgentConfig(data.agent)
 
-        // Initialize session with demo game state
-        const sessionResponse = await fetch('/api/agents/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const sessionResponse = await fetch("/api/agents-v2/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             agentConfig: data.agent,
             gameState: createDemoGameState(),
@@ -105,22 +102,22 @@ export default function AgentsPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to create agent:', error)
+      console.error("Failed to create agent:", error)
     } finally {
       setIsCreating(false)
     }
   }
 
-  const handleStartPlay = async (mode: 'single' | 'autonomous' = 'single') => {
+  const handleStartPlay = async (mode: "single" | "autonomous" = "single") => {
     if (!sessionId) return
 
     setIsPlaying(true)
     setStreamMessages([])
 
     try {
-      const response = await fetch('/api/agents/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/agents-v2/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
           mode,
@@ -128,12 +125,12 @@ export default function AgentsPage() {
       })
 
       if (!response.body) {
-        throw new Error('No response body')
+        throw new Error("No response body")
       }
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
-      let buffer = ''
+      let buffer = ""
 
       while (true) {
         const { done, value } = await reader.read()
@@ -143,11 +140,11 @@ export default function AgentsPage() {
         buffer += decoder.decode(value, { stream: true })
 
         let newlineIndex
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
           const line = buffer.slice(0, newlineIndex).trim()
           buffer = buffer.slice(newlineIndex + 1)
 
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6))
               setStreamMessages((prev) => [...prev, data])
@@ -158,10 +155,9 @@ export default function AgentsPage() {
         }
       }
 
-      // Process any remaining data in buffer
       buffer += decoder.decode()
       const finalLine = buffer.trim()
-      if (finalLine.startsWith('data: ')) {
+      if (finalLine.startsWith("data: ")) {
         try {
           const data = JSON.parse(finalLine.slice(6))
           setStreamMessages((prev) => [...prev, data])
@@ -170,10 +166,9 @@ export default function AgentsPage() {
         }
       }
 
-      // Refresh session stats
       await refreshSessionStats()
     } catch (error) {
-      console.error('Streaming error:', error)
+      console.error("Streaming error:", error)
     } finally {
       setIsPlaying(false)
     }
@@ -182,12 +177,12 @@ export default function AgentsPage() {
   const handlePausePlay = async () => {
     if (!sessionId) return
 
-    await fetch('/api/agents/session', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/agents-v2/session", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sessionId,
-        action: 'pause',
+        action: "pause",
       }),
     })
 
@@ -197,12 +192,12 @@ export default function AgentsPage() {
   const handleStopPlay = async () => {
     if (!sessionId) return
 
-    await fetch('/api/agents/session', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/agents-v2/session", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sessionId,
-        action: 'end',
+        action: "end",
       }),
     })
 
@@ -214,7 +209,7 @@ export default function AgentsPage() {
   const refreshSessionStats = async () => {
     if (!sessionId) return
 
-    const response = await fetch(`/api/agents/session?sessionId=${sessionId}`)
+    const response = await fetch(`/api/agents-v2/session?sessionId=${sessionId}`)
     const data = await response.json()
 
     if (data.success) {
@@ -223,7 +218,7 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -322,7 +317,7 @@ export default function AgentsPage() {
                   <Label>Agent Name</Label>
                   <Input
                     placeholder="Explorer"
-                    value={agentConfig.personality?.name || ''}
+                    value={agentConfig.personality?.name || ""}
                     onChange={(e) =>
                       setAgentConfig({
                         ...agentConfig,
@@ -344,7 +339,7 @@ export default function AgentsPage() {
                         ...agentConfig,
                         personality: {
                           ...agentConfig.personality!,
-                          playStyle: value as AgentPersonality['playStyle'],
+                          playStyle: value as AgentPersonality["playStyle"],
                         },
                       })
                     }
@@ -454,7 +449,7 @@ export default function AgentsPage() {
                 <Label>Primary Goal</Label>
                 <Input
                   placeholder="Discover all locations and complete quests"
-                  value={agentConfig.personality?.goals.primaryGoal || ''}
+                  value={agentConfig.personality?.goals.primaryGoal || ""}
                   onChange={(e) =>
                     setAgentConfig({
                       ...agentConfig,
@@ -524,7 +519,7 @@ export default function AgentsPage() {
                   <>
                     <div className="space-y-2">
                       <Button
-                        onClick={() => handleStartPlay('single')}
+                        onClick={() => handleStartPlay("single")}
                         disabled={isPlaying}
                         className="w-full"
                       >
@@ -533,7 +528,7 @@ export default function AgentsPage() {
                       </Button>
 
                       <Button
-                        onClick={() => handleStartPlay('autonomous')}
+                        onClick={() => handleStartPlay("autonomous")}
                         disabled={isPlaying}
                         className="w-full"
                         variant="secondary"
@@ -573,8 +568,8 @@ export default function AgentsPage() {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Status:</span>
-                        <Badge variant={isPlaying ? 'default' : 'secondary'}>
-                          {isPlaying ? 'Playing' : 'Idle'}
+                        <Badge variant={isPlaying ? "default" : "secondary"}>
+                          {isPlaying ? "Playing" : "Idle"}
                         </Badge>
                       </div>
                     </div>
@@ -600,15 +595,15 @@ export default function AgentsPage() {
                       <div
                         key={idx}
                         className={`p-3 rounded-lg text-sm ${
-                          msg.type === 'thought'
-                            ? 'bg-purple-500/10 border border-purple-500/20'
-                            : msg.type === 'tool_call'
-                            ? 'bg-blue-500/10 border border-blue-500/20'
-                            : msg.type === 'tool_result'
-                            ? 'bg-green-500/10 border border-green-500/20'
-                            : msg.type === 'error'
-                            ? 'bg-red-500/10 border border-red-500/20'
-                            : 'bg-muted'
+                          msg.type === "thought"
+                            ? "bg-purple-500/10 border border-purple-500/20"
+                            : msg.type === "tool_call"
+                              ? "bg-blue-500/10 border border-blue-500/20"
+                              : msg.type === "tool_result"
+                                ? "bg-green-500/10 border border-green-500/20"
+                                : msg.type === "error"
+                                  ? "bg-red-500/10 border border-red-500/20"
+                                  : "bg-muted"
                         }`}
                       >
                         <div className="flex items-start gap-2">
@@ -637,7 +632,7 @@ export default function AgentsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{sessionStats?.totalActions ?? 0}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {sessionStats?.actionsPerMinute?.toFixed(1) ?? '0.0'} per minute
+                  {sessionStats?.actionsPerMinute?.toFixed(1) ?? "0.0"} per minute
                 </p>
               </CardContent>
             </Card>
@@ -647,9 +642,9 @@ export default function AgentsPage() {
                 <CardTitle className="text-sm font-medium">Total Reward</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{sessionStats?.totalReward?.toFixed(1) ?? '0.0'}</div>
+                <div className="text-2xl font-bold">{sessionStats?.totalReward?.toFixed(1) ?? "0.0"}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Avg: {sessionStats?.averageReward?.toFixed(2) ?? '0.00'}
+                  Avg: {sessionStats?.averageReward?.toFixed(2) ?? "0.00"}
                 </p>
               </CardContent>
             </Card>
@@ -704,35 +699,34 @@ export default function AgentsPage() {
   )
 }
 
-// Demo game state for testing
 function createDemoGameState() {
   return {
-    sessionId: 'demo-' + Date.now(),
-    environment: 'Forest Clearing',
+    sessionId: "demo-" + Date.now(),
+    environment: "Forest Clearing",
     position: { x: 0, y: 0, z: 0 },
     visibleEntities: [
       {
-        id: 'npc_merchant',
-        type: 'merchant',
+        id: "npc_merchant",
+        type: "merchant",
         position: { x: 5, y: 0, z: 0 },
-        properties: { name: 'Friendly Merchant', friendly: true },
+        properties: { name: "Friendly Merchant", friendly: true },
       },
       {
-        id: 'enemy_goblin',
-        type: 'goblin',
+        id: "enemy_goblin",
+        type: "goblin",
         position: { x: -8, y: 3, z: 0 },
-        properties: { name: 'Goblin Scout', hostile: true, health: 50 },
+        properties: { name: "Goblin Scout", hostile: true, health: 50 },
       },
       {
-        id: 'chest_treasure',
-        type: 'treasure_chest',
+        id: "chest_treasure",
+        type: "treasure_chest",
         position: { x: 10, y: -2, z: 0 },
-        properties: { locked: false, loot: ['gold', 'potion'] },
+        properties: { locked: false, loot: ["gold", "potion"] },
       },
     ],
     inventory: [
-      { id: 'sword_iron', name: 'Iron Sword', quantity: 1 },
-      { id: 'potion_health', name: 'Health Potion', quantity: 3 },
+      { id: "sword_iron", name: "Iron Sword", quantity: 1 },
+      { id: "potion_health", name: "Health Potion", quantity: 3 },
     ],
     stats: {
       health: 100,
@@ -743,22 +737,22 @@ function createDemoGameState() {
     },
     activeQuests: [
       {
-        id: 'quest_explore',
-        title: 'Explore the Forest',
-        description: 'Discover all locations in the forest',
+        id: "quest_explore",
+        title: "Explore the Forest",
+        description: "Discover all locations in the forest",
         objectives: [
-          { description: 'Find the merchant', completed: false },
-          { description: 'Defeat 5 goblins', completed: false, progress: 0, target: 5 },
-          { description: 'Open treasure chests', completed: false, progress: 0, target: 3 },
+          { description: "Find the merchant", completed: false },
+          { description: "Defeat 5 goblins", completed: false, progress: 0, target: 5 },
+          { description: "Open treasure chests", completed: false, progress: 0, target: 3 },
         ],
       },
     ],
-    availableActions: ['move', 'interact', 'attack', 'use_item', 'speak'],
+    availableActions: ["move", "interact", "attack", "use_item", "speak"],
     recentEvents: [
       {
         timestamp: new Date(),
-        type: 'spawn',
-        description: 'Agent spawned in Forest Clearing',
+        type: "spawn",
+        description: "Agent spawned in Forest Clearing",
       },
     ],
   }
