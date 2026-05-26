@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GameAgentEngine } from '@/lib/agents/agent-engine'
 import type { AgentConfig, GameState } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -27,6 +28,12 @@ function addDeprecationHeaders(response: NextResponse): NextResponse {
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const body = await req.json()
     const { agentConfig, gameState } = body as {
       agentConfig: AgentConfig
@@ -75,6 +82,12 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const sessionId = req.nextUrl.searchParams.get('sessionId')
 
     if (!sessionId) {
@@ -124,6 +137,12 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const body = await req.json()
     const { sessionId, action } = body
 
