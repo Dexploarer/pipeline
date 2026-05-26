@@ -3,6 +3,7 @@ import { getModelForTask } from "@/lib/ai-router"
 import { buildGenerationContext, formatContextForPrompt } from "@/lib/ai/context-builder"
 import { getCachedAIGeneration, cacheAIGeneration } from "@/lib/cache/patterns"
 import { CacheTiers, generateHash } from "@/lib/cache/strategy"
+import { getUserFromRequest } from "@/lib/auth/session"
 import { z } from "zod"
 
 // Request validation schema
@@ -17,9 +18,11 @@ const requestSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    // TODO: Add authentication check here
-    // const session = await getSession(req)
-    // if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return Response.json({ error: "Authentication required" }, { status: 401 })
+    }
 
     // Validate request body
     const body = await req.json()

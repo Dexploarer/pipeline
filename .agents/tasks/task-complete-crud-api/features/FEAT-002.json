@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Write comprehensive Vitest unit tests for the API routes, mocking DB repositories and verifying the route handlers behave correctly",
+  "status": "completed",
+  "steps": [
+    "Create lib/__tests__/api-routes-npcs.test.ts testing NPC routes: test GET /api/npcs returns paginated list, test GET /api/npcs?zoneId=xxx uses getNPCsByZone, test POST /api/npcs calls createNPC and createAuditLog, test GET /api/npcs/[id] returns single NPC, test GET /api/npcs/[id] returns 404 for missing NPC, test PUT /api/npcs/[id] calls updateNPC/audit/invalidate, test DELETE /api/npcs/[id] calls deleteNPC/audit/invalidate.",
+    "Create lib/__tests__/api-routes-zones.test.ts testing Zone routes: test GET /api/zones returns paginated list, test GET /api/zones?type=city filters by type, test POST /api/zones calls createZone with validation, test GET /api/zones/[id] returns 404 for missing, test PUT/DELETE work correctly with audit and cache.",
+    "Create lib/__tests__/api-routes-search.test.ts testing search endpoint: test GET /api/search?q=warrior&type=npc calls searchNPCs, test missing q parameter returns error, test pagination limit parameter works.",
+    "Mock strategy: vi.mock the repository modules (lib/db/repositories/*), vi.mock lib/db/audit.ts, vi.mock lib/cache/patterns.ts, vi.mock lib/auth/session.ts (return dev user for getUserFromRequest). Create NextRequest objects using new NextRequest(url) with appropriate headers. Call the exported route handlers directly.",
+    "Ensure all tests pass with: bun run test:run"
+  ],
+  "acceptance_criteria": [
+    "At least 3 test files exist covering NPCs, Zones, and Search routes",
+    "Tests mock all external dependencies (DB repos, audit, cache, auth)",
+    "Tests verify correct repository function is called with correct arguments",
+    "Tests verify audit logging is called after mutations",
+    "Tests verify cache invalidation is called after mutations",
+    "Tests verify 404 responses for missing entities",
+    "Tests verify pagination response structure",
+    "All tests pass with bun run test:run"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/pipeline && bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "1. NextRequest body can only be consumed once in the jsdom test environment - the validation middleware in createApiHandler reads req.json() and then the handler tries to read it again, causing 'Body already used' errors. 2. Solution: mock @/lib/middleware/api to provide a simplified createApiHandler that bypasses auth/validation/rate-limiting and calls the handler directly. This tests the route handler logic without the double body-read issue. 3. All 37 tests pass including the 17 new API route tests."
+}

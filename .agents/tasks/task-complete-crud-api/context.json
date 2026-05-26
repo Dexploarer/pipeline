@@ -1,0 +1,32 @@
+{
+  "project_type": "Next.js 15 App Router + TypeScript + React 19 + Bun",
+  "language": "TypeScript (strict mode with noUncheckedIndexedAccess)",
+  "build_system": "Bun + Next.js CLI",
+  "test_framework": "Vitest with jsdom environment, setup in vitest.setup.ts, tests in lib/__tests__/",
+  "build_command": "cd /projects/sandbox/pipeline && bun run type-check",
+  "test_command": "cd /projects/sandbox/pipeline && bun run test:run",
+  "verification_instructions": "1. Run bun run type-check to verify no TS errors. 2. Run bun run test:run to verify tests pass.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/pipeline && bun install",
+  "environment_constraints": "OPEN_INTERNET mode. No database available for integration tests - mock DB repos in tests. No Docker needed.",
+  "contribution_requirements": "Use createApiHandler for all API routes. Use Zod schemas for validation. Use audit logging for mutations. Use cache invalidation for mutations.",
+  "key_patterns": "createApiHandler wraps all routes with auth, validation, rate limiting, error handling. Handler signature: (req: NextRequest, context: ApiContext) => Promise<NextResponse>. Context has requestId, userId, params, tracker. Response helpers: successResponse, errorResponse, paginatedResponse. getPaginationParams extracts page/limit/offset from URL. Repos return arrays for list ops and single items for get ops. noUncheckedIndexedAccess means array destructuring needs null checks.",
+  "relevant_files": [
+    "lib/middleware/api.ts",
+    "lib/validation/schemas.ts",
+    "lib/db/repositories/npcs.ts",
+    "lib/db/repositories/quests.ts",
+    "lib/db/repositories/zones.ts",
+    "lib/db/repositories/lore.ts",
+    "lib/db/repositories/relationships.ts",
+    "lib/db/repositories/dialogue-trees.ts",
+    "lib/db/repositories/content-packs.ts",
+    "lib/db/audit.ts",
+    "lib/cache/patterns.ts",
+    "lib/search/api.ts",
+    "lib/auth/session.ts",
+    "lib/npc-types.ts",
+    "lib/__tests__/validation.test.ts"
+  ],
+  "directory_structure": "app/api/ - API routes (Next.js App Router). lib/ - shared code. lib/db/repositories/ - DB CRUD. lib/middleware/ - API wrappers. lib/validation/ - Zod schemas. lib/cache/ - Redis caching. lib/auth/ - Authentication. lib/__tests__/ - test files."
+}

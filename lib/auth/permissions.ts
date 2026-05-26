@@ -1,4 +1,4 @@
-export type Role = "admin" | "editor" | "viewer"
+export type Role = "admin" | "creator" | "viewer"
 
 export interface Permission {
   canCreate: boolean
@@ -16,7 +16,7 @@ const rolePermissions: Record<Role, Permission> = {
     canPublish: true,
     canManageUsers: true,
   },
-  editor: {
+  creator: {
     canCreate: true,
     canEdit: true,
     canDelete: false,

@@ -8,19 +8,31 @@ import type {
   ExportConfig,
 } from './types'
 
+function getApiBaseUrl(): string {
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL']
+  if (apiUrl) return apiUrl
+  const vercelUrl = process.env['VERCEL_URL']
+  if (vercelUrl) return `https://${vercelUrl}`
+  return 'http://localhost:3000'
+}
+
 /**
  * Workflow executor that orchestrates node execution
  * This is the bridge between React Flow visualization and Workflow DevKit execution
  */
 export class WorkflowExecutor {
+  private authToken?: string
+
   /**
    * Execute a workflow defined by nodes and edges
    */
   async execute(
     nodes: Node[],
     edges: Edge[],
-    input: Record<string, unknown>
+    input: Record<string, unknown>,
+    authToken?: string
   ): Promise<WorkflowExecutionState> {
+    this.authToken = authToken
     const executionId = this.generateExecutionId()
     const context: WorkflowContext = {
       executionId,
@@ -90,6 +102,12 @@ export class WorkflowExecutor {
       if (result.success) {
         state.completedNodes.push(currentNode.id)
         context.results[currentNode.id] = result.data
+
+        // Skip downstream nodes if condition not met
+        const resultData = result.data as Record<string, unknown> | null
+        if (resultData && 'conditionMet' in resultData && resultData['conditionMet'] === false) {
+          return // Don't execute child nodes
+        }
       } else {
         state.failedNodes.push(currentNode.id)
         throw new Error(`Node ${currentNode.id} failed: ${result.error}`)
@@ -166,9 +184,12 @@ export class WorkflowExecutor {
     const config = node.data as unknown as AIGenerationConfig
 
     // Call the AI generation API
-    const response = await fetch('/api/workflow/ai-generate', {
+    const response = await fetch(`${getApiBaseUrl()}/api/workflow/ai-generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
       body: JSON.stringify({
         model: config.model,
         prompt: config.prompt,
@@ -189,9 +210,12 @@ export class WorkflowExecutor {
     const config = node.data as VoiceConfig
 
     // Call the voice configuration API
-    const response = await fetch('/api/workflow/voice-config', {
+    const response = await fetch(`${getApiBaseUrl()}/api/workflow/voice-config`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
       body: JSON.stringify({
         voiceConfig: config,
         npcData: context.results,
@@ -209,9 +233,12 @@ export class WorkflowExecutor {
     const config = node.data as unknown as ExportConfig
 
     // Call the export API
-    const response = await fetch('/api/workflow/export', {
+    const response = await fetch(`${getApiBaseUrl()}/api/workflow/export`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
       body: JSON.stringify({
         exportConfig: config,
         workflowResults: context.results,
@@ -225,16 +252,37 @@ export class WorkflowExecutor {
     return response.json()
   }
 
-  private async executeConditionalNode(node: Node, _context: WorkflowContext): Promise<unknown> {
-    const { condition, operator } = node.data
+  private async executeConditionalNode(node: Node, context: WorkflowContext): Promise<unknown> {
+    const { condition, operator } = node.data as { condition?: string; operator?: string }
 
-    // Evaluate the condition based on previous results
-    // This is a simplified implementation
-    return {
-      conditionMet: true,
-      operator,
-      condition,
+    if (!condition) {
+      return { conditionMet: true, operator, condition, evaluatedValue: undefined }
     }
+
+    // Look up the condition value in context.results
+    const evaluatedValue = context.results[condition]
+
+    let conditionMet = false
+    switch (operator) {
+      case 'exists':
+        conditionMet = evaluatedValue !== undefined && evaluatedValue !== null
+        break
+      case 'not_empty':
+        conditionMet = evaluatedValue !== undefined && evaluatedValue !== null && evaluatedValue !== ''
+        break
+      case 'equals':
+        conditionMet = evaluatedValue === true || evaluatedValue === 'true'
+        break
+      case 'greater_than':
+        conditionMet = typeof evaluatedValue === 'number' && evaluatedValue > 0
+        break
+      default:
+        // Default: check truthiness
+        conditionMet = Boolean(evaluatedValue)
+        break
+    }
+
+    return { conditionMet, operator, condition, evaluatedValue }
   }
 
   private generateExecutionId(): string {

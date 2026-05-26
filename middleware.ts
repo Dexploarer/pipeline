@@ -9,20 +9,34 @@ const MAX_REQUEST_SIZE = 10 * 1024 * 1024 // 10MB default
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // 50MB for file uploads
 
 // ============================================================================
+// Origin Validation
+// ============================================================================
+
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false
+  try {
+    const url = new URL(origin)
+    const hostname = url.hostname
+    return (
+      hostname === "localhost" ||
+      hostname.endsWith(".localhost") ||
+      hostname === "vusercontent.net" ||
+      hostname.endsWith(".vusercontent.net") ||
+      hostname === "v0.app" ||
+      hostname.endsWith(".v0.app")
+    )
+  } catch {
+    return false
+  }
+}
+
+// ============================================================================
 // Middleware
 // ============================================================================
 
 export function middleware(request: NextRequest) {
-  const hostname = request.nextUrl.hostname
   const pathname = request.nextUrl.pathname
-
-  // Check if the hostname is a valid preview environment
-  // Allow exact matches or valid subdomains of vusercontent.net and v0.app
-  const isValidPreviewHost =
-    hostname === "vusercontent.net" ||
-    hostname.endsWith(".vusercontent.net") ||
-    hostname === "v0.app" ||
-    hostname.endsWith(".v0.app")
+  const origin = request.headers.get("origin")
 
   // Handle OPTIONS preflight requests
   if (request.method === "OPTIONS") {
@@ -32,8 +46,9 @@ export function middleware(request: NextRequest) {
       "Access-Control-Max-Age": "86400",
     }
 
-    if (isValidPreviewHost) {
-      headers["Access-Control-Allow-Origin"] = "*"
+    if (origin && isAllowedOrigin(origin)) {
+      headers["Access-Control-Allow-Origin"] = origin
+      headers["Access-Control-Allow-Credentials"] = "true"
     }
 
     return new NextResponse(null, {
@@ -72,9 +87,10 @@ export function middleware(request: NextRequest) {
   // Add security headers
   response.headers.set("X-Request-ID", crypto.randomUUID())
 
-  // Add CORS headers for valid preview environments
-  if (isValidPreviewHost) {
-    response.headers.set("Access-Control-Allow-Origin", "*")
+  // Add CORS headers for valid origins
+  if (origin && isAllowedOrigin(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin)
+    response.headers.set("Access-Control-Allow-Credentials", "true")
     response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
     response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
   }

@@ -1,6 +1,8 @@
-import { NextRequest } from 'next/server'
+// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.
+import { NextRequest, NextResponse } from 'next/server'
 import { GameAgentEngine } from '@/lib/agents/agent-engine'
 import type { GameState } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -20,6 +22,12 @@ if (!globalThis.agentSessions) {
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { sessionId, gameState, mode = 'single' } = body as {
       sessionId: string
@@ -98,6 +106,8 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'X-Deprecated': 'true',
+        'X-Deprecated-Message': 'Use /api/agents-v2/ instead',
       },
     })
   } catch (error) {

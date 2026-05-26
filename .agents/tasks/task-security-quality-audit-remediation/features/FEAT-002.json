@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Critical security fixes: auth on API routes, session store hardening, role mismatch, workflow executor relative URLs, and conditional node evaluation.",
+  "status": "completed",
+  "steps": [
+    "STEP 1 - Auth on API routes: Add auth checks to these 7 unprotected routes using getUserFromRequest from lib/auth/session.ts. For each route, import getUserFromRequest and check the Authorization header at the top of the handler. If null is returned AND NODE_ENV !== 'development', return 401. In dev mode allow through (matching existing dev bypass pattern). Files: app/api/generate-npc/route.ts, app/api/generate-dialogue/route.ts, app/api/generate-lore/route.ts, app/api/generate-quest-layer/route.ts, app/api/workflow/execute/route.ts, app/api/agents-v2/session/route.ts, app/api/agents-v2/stream/route.ts",
+    "STEP 2 - Session store hardening: Create lib/agents/session-store.ts that exports a SessionStore class wrapping a Map<string, {engine, createdAt, lastAccessedAt}>. Implement: MAX_SESSIONS=100, SESSION_TTL_MS=30*60*1000, get() that checks TTL and updates lastAccessedAt, set() that evicts oldest session if full, delete(), cleanup() that removes expired sessions. Run cleanup on every get/set call. Then update app/api/agents-v2/session/route.ts and app/api/agents-v2/stream/route.ts to import and use the new SessionStore singleton instead of the raw globalThis map.",
+    "STEP 3 - Role mismatch: In lib/auth/permissions.ts, rename 'editor' to 'creator' in the Role type and rolePermissions map. This aligns with lib/auth/session.ts which uses admin|creator|viewer.",
+    "STEP 4 - Workflow executor relative URLs: In lib/workflow/executor.ts, add a getApiBaseUrl() helper at the top of the file (same logic as lib/workflow/durable-workflow.ts lines 9-22). Replace all relative '/api/...' fetch URLs with absolute URLs using getApiBaseUrl(). Affected methods: executeAIGenerationNode, executeVoiceConfigNode, executeExportNode.",
+    "STEP 5 - Conditional node evaluation: In lib/workflow/executor.ts, implement actual condition evaluation in executeConditionalNode. The node.data has condition (string key into context.results) and operator (e.g., 'equals', 'exists', 'not_empty', 'greater_than'). Look up the condition value in context.results and evaluate using the operator. Return { conditionMet: boolean, operator, condition, evaluatedValue }. Also modify executeNodeChain to check if a node result has conditionMet === false and skip downstream nodes in that case."
+  ],
+  "acceptance_criteria": [
+    "All 7 API routes return 401 when no valid auth header is provided (in non-dev mode)",
+    "Session store enforces max 100 sessions and 30-minute TTL",
+    "lib/auth/permissions.ts uses 'creator' instead of 'editor' matching session.ts",
+    "WorkflowExecutor uses absolute URLs from getApiBaseUrl()",
+    "executeConditionalNode evaluates conditions against context.results",
+    "bun run type-check passes without new errors"
+  ],
+  "verification": [
+    "bun run type-check",
+    "bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "All 5 steps implemented cleanly. Type-check, tests, and lint all pass. The noPropertyAccessFromIndexSignature setting required bracket notation for the conditionMet check in executor.ts. No other files referenced the 'editor' role from permissions.ts so the rename was safe."
+}

@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { anthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'edge'
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { model, prompt, temperature = 0.7, systemPrompt, context } = body
 

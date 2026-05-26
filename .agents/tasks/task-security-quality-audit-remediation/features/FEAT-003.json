@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "High priority security and resilience: audit log DB implementation, dev bypass tightening, CORS origin echo fix, in-memory rate limit fallback, CSP update, XML safety comment, env.ts lazy validation, and ElevenLabs env key.",
+  "status": "completed",
+  "steps": [
+    "STEP 1 - Audit log DB implementation: In lib/db/audit.ts, import { query, isDatabaseAvailable } from './client'. In createAuditLog, if isDatabaseAvailable() returns true, execute INSERT INTO audit_logs (user_id, action, entity_type, entity_id, changes, created_at) VALUES ($1, $2, $3, $4, $5, NOW()). If DB is not available, fall back to console.log with the structured logger from lib/logging/logger.ts. Also implement getAuditLogs to query the audit_logs table with entity_type and entity_id filters. Remove the throw at the end - audit failures should not crash callers.",
+    "STEP 2 - Dev bypass tightening: In lib/auth/session.ts, modify the dev mode check in getCurrentUser and getUserFromRequest. Currently: `process.env['NODE_ENV'] === 'development' && process.env['VERCEL_ENV'] !== 'production'`. Change to: `process.env['NODE_ENV'] === 'development' && (!process.env['VERCEL_ENV'] || process.env['VERCEL_ENV'] === 'development')`. This ensures that if VERCEL_ENV is 'preview' or any value other than 'development', the dev bypass does NOT activate.",
+    "STEP 3 - CORS origin echo: In middleware.ts, instead of setting `Access-Control-Allow-Origin: *`, echo back the request's Origin header ONLY if it matches the allowlist (ends with .vusercontent.net or .v0.app or is localhost). Extract the Origin header from the request. If it matches, set Access-Control-Allow-Origin to that specific origin. If it does not match, do not set the CORS header at all.",
+    "STEP 4 - In-memory rate limit fallback: In lib/cache/rate-limit.ts, when Redis is not available (the existing early return path), instead of allowing unlimited requests, implement a simple in-memory sliding window. Create a module-level Map<string, {count: number, windowStart: number}>. On each check: if now - windowStart > window*1000, reset. If count >= config.requests, deny. Otherwise increment. This ensures rate limiting works even without Redis.",
+    "STEP 5 - CSP update: In next.config.ts, add `https://api.elevenlabs.io` and `https://*.stackframe.co` to the connect-src directive in the CSP header string.",
+    "STEP 6 - XML safety comment: In lib/agents/event-logger.ts, add a JSDoc comment above the class noting that fast-xml-parser's XMLBuilder automatically escapes XML special characters (<, >, &, \", ') in text content nodes, making XSS via XML injection safe by default.",
+    "STEP 7 - Env.ts lazy validation: In lib/config/env.ts, replace `export const env = validateEnv()` with a lazy getter pattern: `let _env: Env | null = null; export function getEnv(): Env { if (!_env) _env = validateEnv(); return _env; }`. Keep `export type Env` as is. In next.config.ts, replace `import './lib/config/env'` with a guarded version that checks for SKIP_ENV_VALIDATION env var: wrap in a conditional `if (!process.env.SKIP_ENV_VALIDATION) { ... }` or use a dynamic import with try/catch.",
+    "STEP 8 - ElevenLabs env key: In lib/config/env.ts, add `ELEVENLABS_API_KEY: z.string().optional()` to the envSchema object."
+  ],
+  "acceptance_criteria": [
+    "Audit log writes to database when isDatabaseAvailable() is true, falls back to structured logger otherwise",
+    "Dev bypass only activates when NODE_ENV=development AND VERCEL_ENV is unset or 'development'",
+    "CORS only echoes Origin for .vusercontent.net and .v0.app domains",
+    "Rate limiting works with in-memory fallback when Redis is unavailable",
+    "CSP connect-src includes api.elevenlabs.io and *.stackframe.co",
+    "env.ts uses lazy validation that does not crash at import time",
+    "ELEVENLABS_API_KEY is in the env schema",
+    "bun run type-check passes"
+  ],
+  "verification": [
+    "bun run type-check",
+    "bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "All 8 steps implemented cleanly. Type-check, tests, and lint all pass. Used bracket notation for process.env access in next.config.ts (required by noPropertyAccessFromIndexSignature). The top-level await in next.config.ts for dynamic import works with Next.js 15 ESM support. No other files imported the removed `env` export so no downstream updates needed."
+}

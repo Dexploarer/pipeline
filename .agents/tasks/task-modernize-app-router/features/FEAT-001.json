@@ -1,0 +1,46 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create proper App Router file-based routing with a shared dashboard layout featuring a persistent collapsible sidebar, top header bar, and responsive mobile navigation. Move all tab-based content into separate route pages under app/(dashboard)/.",
+  "status": "completed",
+  "steps": [
+    "Step 1: Create app/(dashboard)/layout.tsx - a shared dashboard layout with: (a) A persistent collapsible sidebar (not hover-triggered) using the navItems from components/sidebar-nav.tsx. The sidebar should have: app logo/branding at top, navigation links with icons using next/link, collapse/expand toggle button, active state highlighting via usePathname() from next/navigation. (b) A top header bar with: breadcrumb showing current section, ThemeToggle component, version badge. (c) Responsive design: on mobile (< md breakpoint), sidebar becomes a hamburger menu sheet/drawer using shadcn Dialog or a custom overlay. Use 'use client' since it needs usePathname and useState.",
+    "Step 2: Create a new components/dashboard-sidebar.tsx component for the sidebar logic. Map the navItems to routes: workflows -> /workflows, ai-agents -> /agents, generator -> /generator, quest-builder -> /quests, lore -> /lore, relationships -> /relationships, flow -> /quests/flow, dialogue -> /dialogue, context -> /tools, simulator -> /simulator, library -> /library, analytics -> /analytics, world-map -> /world. Use next/link for navigation. Use usePathname() to determine active state. Include a collapse toggle that stores state (collapsed shows only icons, expanded shows icons + labels).",
+    "Step 3: Create app/(dashboard)/page.tsx - Dashboard home/overview page with: (a) Welcome section ('Welcome back' header). (b) Quick action cards linking to: /generator (Generate NPC), /quests (Create Quest), /workflows (Start Workflow), /agents (Launch Agent). Each card should have an icon, title, description, and be a next/link. (c) Getting Started guide for new users with 3-4 steps (Connect API key, Generate your first NPC, Create a quest, Launch an agent). (d) System status card that calls /api/health and shows the result (use fetch in a useEffect or just show a static 'System Online' badge).",
+    "Step 4: Create app/(dashboard)/generator/page.tsx - Renders the NPCGenerator component with Suspense/ErrorBoundary wrapper, same heading as the current 'generator' tab content.",
+    "Step 5: Create app/(dashboard)/quests/page.tsx - Renders LayeredQuestBuilder with Suspense/ErrorBoundary, same heading as 'quest-builder' tab.",
+    "Step 6: Create app/(dashboard)/lore/page.tsx - Renders LoreManager with Suspense/ErrorBoundary.",
+    "Step 7: Create app/(dashboard)/dialogue/page.tsx - Renders DialogueTreeEditor with Suspense/ErrorBoundary.",
+    "Step 8: Create app/(dashboard)/relationships/page.tsx - Renders RelationshipGraph with Suspense/ErrorBoundary.",
+    "Step 9: Create app/(dashboard)/world/page.tsx - Renders WorldMap and ContentPackManager with Suspense/ErrorBoundary.",
+    "Step 10: Create app/(dashboard)/workflows/page.tsx - Contains the workflow studio content (import WorkflowBuilder directly, or keep the existing workflow-studio page content here). Include the feature cards and the link/button to open the full workflow builder.",
+    "Step 11: Create app/(dashboard)/agents/page.tsx - Copy the agents page content but update API endpoints from /api/agents/session to /api/agents-v2/session, /api/agents/stream to /api/agents-v2/stream, /api/agents/create stays the same (no v2 create). Keep the same UI.",
+    "Step 12: Create app/(dashboard)/settings/page.tsx - A simple settings page with sections for: API Keys configuration (placeholder inputs for Anthropic, OpenAI, ElevenLabs keys with a note they are stored in env), Theme preference, About section showing version.",
+    "Step 13: Update app/page.tsx to redirect to /(dashboard) using next/navigation redirect(), or make it a simple landing page that links into the dashboard. Use redirect() from 'next/navigation' in a server component.",
+    "Step 14: Update app/workflow-studio/page.tsx to either redirect to /workflows or keep it as-is (it can remain as a standalone fullscreen workflow editor). Add a back link to /workflows.",
+    "Step 15: Update app/agents/page.tsx (the old one) to redirect to the new /agents route using next/navigation redirect().",
+    "Step 16: Enable Google Fonts in app/layout.tsx - uncomment the Geist and Geist_Mono imports and font initialization, apply the font className variables to the body element (e.g., className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}).",
+    "Step 17: Add Toaster from sonner to app/layout.tsx - import { Toaster } from 'sonner' and add <Toaster /> inside the ThemeProvider, after {children}. This enables toast notifications app-wide."
+  ],
+  "acceptance_criteria": [
+    "bun run type-check passes with no errors",
+    "bun run build completes successfully",
+    "bun run test:run passes all existing tests",
+    "The app/(dashboard)/layout.tsx file exists and exports a layout component with sidebar + header",
+    "Each route page (generator, quests, lore, dialogue, relationships, world, workflows, agents, settings) exists under app/(dashboard)/",
+    "The dashboard home page at app/(dashboard)/page.tsx includes quick action cards and getting started guide",
+    "The agents page uses /api/agents-v2/session and /api/agents-v2/stream endpoints",
+    "Google Fonts (Geist) are enabled in app/layout.tsx",
+    "Sonner Toaster is added to the root layout",
+    "app/page.tsx redirects to the dashboard",
+    "Navigation uses next/link for client-side transitions",
+    "Sidebar uses usePathname() for active state highlighting"
+  ],
+  "verification": [
+    "Run: bun run type-check",
+    "Run: bun run build",
+    "Run: bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "Fixed pre-existing build error: next.config.ts had a top-level await for env validation that was incompatible with Next.js 15.5.4 config loader (ERR_REQUIRE_ASYNC_MODULE). Removed the top-level await and added a comment noting env validation is handled at runtime. The app/page.tsx and app/agents/page.tsx were removed (not redirected) because the (dashboard) route group makes those paths served directly by app/(dashboard)/page.tsx and app/(dashboard)/agents/page.tsx. CSS warnings about field-sizing selectors are pre-existing and cosmetic only."
+}
