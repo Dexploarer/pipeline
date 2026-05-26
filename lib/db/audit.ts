@@ -1,4 +1,6 @@
 import { getUserId } from "../auth/session"
+import { query, isDatabaseAvailable } from "./client"
+import { logger } from "@/lib/logging/logger"
 
 // Audit log for tracking changes
 export interface AuditLog {
@@ -21,33 +23,43 @@ export async function createAuditLog(
   try {
     const userId = await getUserId()
 
-    // In production, this would insert into an audit_logs table
-    console.log("[v0] Audit log:", {
-      userId,
+    if (isDatabaseAvailable()) {
+      await query(
+        'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, changes, created_at) VALUES ($1, $2, $3, $4, $5, NOW())',
+        [userId, action, entityType, entityId, changes ? JSON.stringify(changes) : null]
+      )
+    } else {
+      logger.info("Audit log entry", {
+        userId,
+        action,
+        entityType,
+        entityId,
+        changes,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  } catch (error) {
+    logger.error("Failed to create audit log", error as Error, {
       action,
       entityType,
       entityId,
-      changes,
-      timestamp: new Date(),
     })
-  } catch (error) {
-    console.error("[v0] Failed to create audit log:", error)
-
-    // TODO: Send to error tracking service (e.g., Sentry)
-    // if (typeof Sentry !== 'undefined') {
-    //   Sentry.captureException(error, {
-    //     tags: { component: 'audit-log' },
-    //     extra: { action, entityType, entityId }
-    //   })
-    // }
-
-    // Rethrow to ensure caller knows audit failed
-    throw new Error(`Audit log creation failed: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
 // Get audit logs for an entity
-export async function getAuditLogs(_entityType: string, _entityId: string): Promise<AuditLog[]> {
-  // In production, this would query the audit_logs table
-  return []
+export async function getAuditLogs(entityType: string, entityId: string): Promise<AuditLog[]> {
+  try {
+    const rows = await query<AuditLog>(
+      'SELECT * FROM audit_logs WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC LIMIT 100',
+      [entityType, entityId]
+    )
+    return rows
+  } catch (error) {
+    logger.error("Failed to get audit logs", error as Error, {
+      entityType,
+      entityId,
+    })
+    return []
+  }
 }

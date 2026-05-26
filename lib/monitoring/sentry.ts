@@ -46,7 +46,9 @@ export function initSentry(config?: SentryConfig): void {
 
   // Skip in development or if no DSN
   if (!enabled || !dsn) {
-    console.log("Sentry monitoring disabled")
+    if (environment !== "development") {
+      console.warn("Sentry monitoring not configured in non-development environment. Set SENTRY_DSN to enable error tracking.")
+    }
     return
   }
 

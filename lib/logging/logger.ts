@@ -193,7 +193,7 @@ export const logger = Logger.getInstance()
 // ============================================================================
 
 export function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  return `req_${crypto.randomUUID()}`
 }
 
 // ============================================================================

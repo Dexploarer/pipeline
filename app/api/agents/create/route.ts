@@ -1,22 +1,36 @@
+// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.
 import { NextRequest, NextResponse } from 'next/server'
 import type { AgentConfig, AgentPersonality } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
+
+function addDeprecationHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Deprecated", "true")
+  response.headers.set("X-Deprecated-Message", "Use /api/agents-v2/ instead")
+  return response
+}
 
 /**
  * Create a new AI agent configuration
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const body = await req.json()
     const { name, playStyle, goals, model = 'claude-sonnet-4-5-20250929' } = body
 
     if (!name || !playStyle) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Name and play style are required' },
         { status: 400 }
-      )
+      ))
     }
 
     // Create agent configuration
@@ -46,19 +60,19 @@ export async function POST(req: NextRequest) {
       maxAutonomousActions: body.maxAutonomousActions ?? 100,
     }
 
-    return NextResponse.json({
+    return addDeprecationHeaders(NextResponse.json({
       success: true,
       agent: agentConfig,
-    })
+    }))
   } catch (error) {
     console.error('Agent creation error:', error)
-    return NextResponse.json(
+    return addDeprecationHeaders(NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    ))
   }
 }
 

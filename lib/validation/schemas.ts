@@ -390,7 +390,6 @@ export const listAssetsSchema = z.object({
 export const batchGenerateNPCsSchema = z.object({
   npcs: z.array(generateNPCSchema).min(1).max(50),
   zoneId: uuidSchema.optional(),
-  progressCallback: z.function().optional(),
 })
 
 // ============================================================================

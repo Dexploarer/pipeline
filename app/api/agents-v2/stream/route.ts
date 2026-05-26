@@ -1,25 +1,25 @@
 import { NextRequest } from 'next/server'
-import { EventDrivenAgentEngine } from '@/lib/agents/event-driven-engine'
 import type { GameState } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
+import { sessionStore } from '@/lib/agents/session-store'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
-
-// Access event-driven sessions
-declare global {
-  var eventDrivenSessions: Map<string, EventDrivenAgentEngine> | undefined
-}
-
-const activeSessions = globalThis.eventDrivenSessions || new Map<string, EventDrivenAgentEngine>()
-if (!globalThis.eventDrivenSessions) {
-  globalThis.eventDrivenSessions = activeSessions
-}
 
 /**
  * Stream event-driven agent decision-making
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Authentication required" }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const body = await req.json()
     const { sessionId, gameState, mode = 'single' } = body as {
       sessionId: string
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return new Response('Session ID is required', { status: 400 })
     }
 
-    const engine = activeSessions.get(sessionId)
+    const engine = sessionStore.get(sessionId)
 
     if (!engine) {
       return new Response('Session not found', { status: 404 })

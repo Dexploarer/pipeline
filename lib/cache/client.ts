@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis"
+import { logger } from "@/lib/logging/logger"
 
 let redisClient: Redis | null = null
 let redisResolved = false
@@ -19,7 +20,7 @@ export function getRedisClient(): Redis | null {
   const token = process.env["KV_REST_API_TOKEN"]
 
   if (!url || !token) {
-    console.warn("[cache] Redis credentials not configured - caching is disabled")
+    logger.warn("Redis credentials not configured - caching is disabled")
     return null
   }
 
@@ -43,7 +44,7 @@ export class CacheClient {
       const value = await this.getClient().get<T>(key)
       return value
     } catch (error) {
-      console.error("[v0] Cache get error:", error)
+      logger.error("Cache get error", error instanceof Error ? error : undefined)
       return null
     }
   }
@@ -57,7 +58,7 @@ export class CacheClient {
         await this.getClient().set(key, value)
       }
     } catch (error) {
-      console.error("[v0] Cache set error:", error)
+      logger.error("Cache set error", error instanceof Error ? error : undefined)
     }
   }
 
@@ -66,7 +67,7 @@ export class CacheClient {
     try {
       await this.getClient().del(key)
     } catch (error) {
-      console.error("[v0] Cache del error:", error)
+      logger.error("Cache del error", error instanceof Error ? error : undefined)
     }
   }
 
@@ -76,7 +77,7 @@ export class CacheClient {
       const result = await this.getClient().exists(key)
       return result === 1
     } catch (error) {
-      console.error("[v0] Cache exists error:", error)
+      logger.error("Cache exists error", error instanceof Error ? error : undefined)
       return false
     }
   }
@@ -87,20 +88,27 @@ export class CacheClient {
       const results = await this.getClient().mget(...keys)
       return results as Array<T | null>
     } catch (error) {
-      console.error("[v0] Cache mget error:", error)
+      logger.error("Cache mget error", error instanceof Error ? error : undefined)
       return keys.map(() => null)
     }
   }
 
-  // Set multiple keys
+  // Set multiple keys using pipeline
   async mset(entries: Array<[string, unknown, number?]>): Promise<void> {
     try {
+      if (entries.length === 0) return
+      const pipeline = this.getClient().pipeline()
       for (const entry of entries) {
         const [key, value, ttl] = entry
-        await this.set(key, value, ttl)
+        if (ttl !== undefined) {
+          pipeline.setex(key, ttl, value)
+        } else {
+          pipeline.set(key, value)
+        }
       }
+      await pipeline.exec()
     } catch (error) {
-      console.error("[v0] Cache mset error:", error)
+      logger.error("Cache mset error", error instanceof Error ? error : new Error(String(error)))
     }
   }
 
@@ -129,7 +137,7 @@ export class CacheClient {
 
       return Array.from(allKeys)
     } catch (error) {
-      console.error("[v0] Cache keys error:", error)
+      logger.error("Cache keys error", error instanceof Error ? error : undefined)
       return []
     }
   }
@@ -144,7 +152,7 @@ export class CacheClient {
       }
       return 0
     } catch (error) {
-      console.error("[v0] Cache delPattern error:", error)
+      logger.error("Cache delPattern error", error instanceof Error ? error : undefined)
       return 0
     }
   }
@@ -154,7 +162,7 @@ export class CacheClient {
     try {
       return await this.getClient().incr(key)
     } catch (error) {
-      console.error("[v0] Cache incr error:", error)
+      logger.error("Cache incr error", error instanceof Error ? error : undefined)
       return 0
     }
   }
@@ -164,7 +172,7 @@ export class CacheClient {
     try {
       return await this.getClient().decr(key)
     } catch (error) {
-      console.error("[v0] Cache decr error:", error)
+      logger.error("Cache decr error", error instanceof Error ? error : undefined)
       return 0
     }
   }
@@ -174,7 +182,7 @@ export class CacheClient {
     try {
       return await this.getClient().lpush(key, value)
     } catch (error) {
-      console.error("[v0] Cache lpush error:", error)
+      logger.error("Cache lpush error", error instanceof Error ? error : undefined)
       return 0
     }
   }
@@ -183,7 +191,7 @@ export class CacheClient {
     try {
       return await this.getClient().rpop<T>(key)
     } catch (error) {
-      console.error("[v0] Cache rpop error:", error)
+      logger.error("Cache rpop error", error instanceof Error ? error : undefined)
       return null
     }
   }
@@ -192,7 +200,7 @@ export class CacheClient {
     try {
       return await this.getClient().lrange<T>(key, start, stop)
     } catch (error) {
-      console.error("[v0] Cache lrange error:", error)
+      logger.error("Cache lrange error", error instanceof Error ? error : undefined)
       return []
     }
   }
@@ -201,7 +209,7 @@ export class CacheClient {
     try {
       await this.getClient().ltrim(key, start, stop)
     } catch (error) {
-      console.error("[v0] Cache ltrim error:", error)
+      logger.error("Cache ltrim error", error instanceof Error ? error : undefined)
     }
   }
 
@@ -211,7 +219,7 @@ export class CacheClient {
       if (members.length === 0) return 0
       return await this.getClient().sadd(key, ...(members as [string, ...string[]]))
     } catch (error) {
-      console.error("[v0] Cache sadd error:", error)
+      logger.error("Cache sadd error", error instanceof Error ? error : undefined)
       return 0
     }
   }
@@ -220,7 +228,7 @@ export class CacheClient {
     try {
       return await this.getClient().smembers(key)
     } catch (error) {
-      console.error("[v0] Cache smembers error:", error)
+      logger.error("Cache smembers error", error instanceof Error ? error : undefined)
       return []
     }
   }
@@ -229,7 +237,7 @@ export class CacheClient {
     try {
       return await this.getClient().srem(key, ...members)
     } catch (error) {
-      console.error("[v0] Cache srem error:", error)
+      logger.error("Cache srem error", error instanceof Error ? error : undefined)
       return 0
     }
   }
@@ -240,7 +248,7 @@ export class CacheClient {
       const result = await this.getClient().expire(key, seconds)
       return result === 1
     } catch (error) {
-      console.error("[v0] Cache expire error:", error)
+      logger.error("Cache expire error", error instanceof Error ? error : undefined)
       return false
     }
   }
@@ -250,7 +258,7 @@ export class CacheClient {
     try {
       return await this.getClient().ttl(key)
     } catch (error) {
-      console.error("[v0] Cache ttl error:", error)
+      logger.error("Cache ttl error", error instanceof Error ? error : undefined)
       return -2
     }
   }
@@ -260,7 +268,7 @@ export class CacheClient {
     try {
       return await this.getClient().eval(script, keys, args)
     } catch (error) {
-      console.error("[v0] Cache eval error:", error)
+      logger.error("Cache eval error", error instanceof Error ? error : undefined)
       throw error
     }
   }

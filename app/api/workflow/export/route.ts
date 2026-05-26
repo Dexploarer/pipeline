@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -26,6 +27,12 @@ interface ExportRequestBody {
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body: ExportRequestBody = await req.json()
     const { exportConfig, workflowResults } = body
 

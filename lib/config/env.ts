@@ -34,6 +34,9 @@ const envSchema = z.object({
   // Asset Storage (optional)
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
 
+  // ElevenLabs (optional)
+  ELEVENLABS_API_KEY: z.string().optional(),
+
   // Authentication (optional in development)
   STACK_PROJECT_ID: z.string().optional(),
   STACK_PUBLISHABLE_CLIENT_KEY: z.string().optional(),
@@ -102,10 +105,21 @@ export function validateEnv(): z.infer<typeof envSchema> {
 }
 
 // ============================================================================
-// Validated Environment Export
+// Lazy Validated Environment Export
 // ============================================================================
 
-export const env = validateEnv()
+let _env: Env | null = null
+
+/**
+ * Get validated environment variables.
+ * Validation runs lazily on first access, not at import time.
+ */
+export function getEnv(): Env {
+  if (!_env) {
+    _env = validateEnv()
+  }
+  return _env
+}
 
 // ============================================================================
 // Type Exports
