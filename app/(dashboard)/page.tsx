@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { Sparkles, Layers, Workflow, Bot, Key, User, Compass, Zap } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -65,7 +66,10 @@ export default function DashboardHomePage() {
         if (res.ok) setHealthStatus("online")
         else setHealthStatus("offline")
       })
-      .catch(() => setHealthStatus("offline"))
+      .catch(() => {
+        setHealthStatus("offline")
+        toast.error("Could not reach server")
+      })
   }, [])
 
   return (

@@ -20,6 +20,7 @@ import {
   PanelLeftOpen,
   Home,
   Settings,
+  Wrench,
 } from "lucide-react"
 
 interface NavItem {
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { href: "/dialogue", label: "Dialogue Trees", icon: MessageSquare },
   { href: "/simulator", label: "NPC Simulator", icon: FlaskConical },
   { href: "/library", label: "Script Library", icon: Library },
+  { href: "/tools", label: "Tools", icon: Wrench },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/world", label: "World Map", icon: Map },
   { href: "/settings", label: "Settings", icon: Settings },

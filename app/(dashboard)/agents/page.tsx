@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -99,10 +100,14 @@ export default function AgentsPage() {
 
         if (sessionData.success) {
           setSessionId(sessionData.session.id)
+          toast.success("Agent created successfully")
         }
+      } else {
+        toast.error("Failed to create agent")
       }
     } catch (error) {
       console.error("Failed to create agent:", error)
+      toast.error("Failed to create agent")
     } finally {
       setIsCreating(false)
     }
