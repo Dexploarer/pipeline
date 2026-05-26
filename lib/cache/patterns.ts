@@ -1,5 +1,6 @@
 import { cache } from "./client"
 import { CacheTTL } from "./strategy"
+import { logger } from "@/lib/logging/logger"
 
 // Cache-aside pattern: Check cache first, fetch if miss, store result
 export async function getCachedOrFetch<T>(
@@ -48,9 +49,9 @@ export async function invalidateEntity(entityType: string, entityId: string): Pr
     await cache.delPattern(`list:${entityType}:*`)
     await cache.delPattern(`zone:*:${entityType}s`)
 
-    console.log(`[v0] Invalidated cache for ${entityType}:${entityId}`)
+    logger.info(`Cache invalidated for ${entityType}:${entityId}`)
   } catch (error) {
-    console.error(`[v0] Cache invalidation error for ${entityType}:${entityId}:`, error)
+    logger.error(`Cache invalidation error for ${entityType}:${entityId}`, error instanceof Error ? error : undefined)
     throw error
   }
 }
@@ -60,9 +61,9 @@ export async function invalidateZone(zoneId: string): Promise<void> {
   try {
     await cache.del(`zone:${zoneId}`)
     await cache.delPattern(`zone:${zoneId}:*`)
-    console.log(`[v0] Invalidated cache for zone:${zoneId}`)
+    logger.info(`Cache invalidated for zone:${zoneId}`)
   } catch (error) {
-    console.error(`[v0] Cache invalidation error for zone:${zoneId}:`, error)
+    logger.error(`Cache invalidation error for zone:${zoneId}`, error instanceof Error ? error : undefined)
     throw error
   }
 }
@@ -83,7 +84,7 @@ export async function warmCache(entityType: string, entities: unknown[]): Promis
 
   const skippedCount = entities.length - validEntities.length
   if (skippedCount > 0) {
-    console.warn(`[v0] Skipped ${skippedCount} ${entityType} entities with missing IDs during cache warming`)
+    logger.warn(`Skipped ${skippedCount} ${entityType} entities with missing IDs during cache warming`)
   }
 
   const entries: [string, unknown, number][] = validEntities.map((entity) => [
@@ -93,7 +94,7 @@ export async function warmCache(entityType: string, entities: unknown[]): Promis
   ])
 
   await cache.mset(entries)
-  console.log(`[v0] Warmed cache with ${validEntities.length} ${entityType} entities`)
+  logger.info(`Warmed cache with ${validEntities.length} ${entityType} entities`)
 }
 
 // Cache AI generation results
