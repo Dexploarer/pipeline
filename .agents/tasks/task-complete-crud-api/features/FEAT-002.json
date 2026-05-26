@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Write comprehensive Vitest unit tests for the API routes, mocking DB repositories and verifying the route handlers behave correctly",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create lib/__tests__/api-routes-npcs.test.ts testing NPC routes: test GET /api/npcs returns paginated list, test GET /api/npcs?zoneId=xxx uses getNPCsByZone, test POST /api/npcs calls createNPC and createAuditLog, test GET /api/npcs/[id] returns single NPC, test GET /api/npcs/[id] returns 404 for missing NPC, test PUT /api/npcs/[id] calls updateNPC/audit/invalidate, test DELETE /api/npcs/[id] calls deleteNPC/audit/invalidate.",
     "Create lib/__tests__/api-routes-zones.test.ts testing Zone routes: test GET /api/zones returns paginated list, test GET /api/zones?type=city filters by type, test POST /api/zones calls createZone with validation, test GET /api/zones/[id] returns 404 for missing, test PUT/DELETE work correctly with audit and cache.",
