@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Create all 7 CRUD API route files (14 files total) plus the search endpoint, following the createApiHandler pattern from lib/middleware/api.ts",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create app/api/npcs/route.ts with GET (list with pagination, filtering by zoneId/archetype/search) and POST (create with createNPCSchema validation). GET should use getNPCsByZone when zoneId param is present, otherwise getAllNPCs. POST should call createAuditLog and invalidateEntity after creation. Use rateLimit: { requests: 100, window: 60 } for GET and { requests: 30, window: 60 } for POST.",
     "Create app/api/npcs/[id]/route.ts with GET (single NPC by ID), PUT (update with updateNPCSchema validation), DELETE. PUT and DELETE should call createAuditLog and invalidateEntity. GET should use getCachedOrFetch pattern. Access ID from ctx.params?.id (the ApiContext has params from the wrapper).",
@@ -38,5 +38,5 @@
     "Verify all 15 route files exist: ls app/api/npcs/route.ts app/api/npcs/\\[id\\]/route.ts app/api/quests/route.ts app/api/quests/\\[id\\]/route.ts app/api/zones/route.ts app/api/zones/\\[id\\]/route.ts app/api/lore/route.ts app/api/lore/\\[id\\]/route.ts app/api/relationships/route.ts app/api/relationships/\\[id\\]/route.ts app/api/dialogue-trees/route.ts app/api/dialogue-trees/\\[id\\]/route.ts app/api/content-packs/route.ts app/api/content-packs/\\[id\\]/route.ts app/api/search/route.ts"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "1. ctx.params uses Record<string,string> so bracket notation is required (ctx.params?.['id']) due to noUncheckedIndexedAccess. 2. Zone type uses parentRegionId not parentZoneId. 3. ContentPack metadata is Record<string,unknown>|undefined so bracket notation needed for property access. 4. Type check passes cleanly after fixes."
 }

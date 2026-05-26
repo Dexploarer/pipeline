@@ -1,7 +1,14 @@
 {
   "task_id": "task-complete-crud-api",
   "task_description": "Build a complete RESTful CRUD API layer for all entity types (NPCs, Quests, Zones, Lore, Relationships, Dialogue Trees, Content Packs) plus a search endpoint. Uses existing createApiHandler middleware, Zod validation schemas, DB repositories, audit logging, and cache invalidation patterns.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "bun run type-check passes (0 TS errors). bun run test:run passes all 37 tests (5 test files). Review fixes applied: DELETE/PUT handlers now check entity existence before proceeding (returning 404 if not found), and search error no longer reflects user input."
+  }
 }
