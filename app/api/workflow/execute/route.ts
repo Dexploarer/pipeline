@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WorkflowExecutor } from '@/lib/workflow/executor'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300 // 5 minutes for workflow execution
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { nodes, edges, input } = body
 

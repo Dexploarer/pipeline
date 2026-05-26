@@ -1,8 +1,15 @@
 import { generateText } from "ai"
 import { getModelForTask } from "@/lib/ai-router"
+import { getUserFromRequest } from "@/lib/auth/session"
 
 export async function POST(req: Request) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return Response.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { context, existingNodes, model: customModel } = body
 
