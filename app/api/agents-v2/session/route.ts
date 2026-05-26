@@ -1,25 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EventDrivenAgentEngine } from '@/lib/agents/event-driven-engine'
 import type { AgentConfig, GameState } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
+import { sessionStore } from '@/lib/agents/session-store'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
-
-// Store active event-driven sessions
-declare global {
-  var eventDrivenSessions: Map<string, EventDrivenAgentEngine> | undefined
-}
-
-const activeSessions = globalThis.eventDrivenSessions || new Map<string, EventDrivenAgentEngine>()
-if (!globalThis.eventDrivenSessions) {
-  globalThis.eventDrivenSessions = activeSessions
-}
 
 /**
  * Initialize event-driven agent session
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { agentConfig, gameState } = body as {
       agentConfig: AgentConfig
@@ -40,7 +38,7 @@ export async function POST(req: NextRequest) {
     const sessionId = await engine.initializeSession(gameState)
 
     // Store session
-    activeSessions.set(sessionId, engine)
+    sessionStore.set(sessionId, engine)
 
     return NextResponse.json({
       success: true,
@@ -72,6 +70,12 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const sessionId = req.nextUrl.searchParams.get('sessionId')
 
     if (!sessionId) {
@@ -81,7 +85,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const engine = activeSessions.get(sessionId)
+    const engine = sessionStore.get(sessionId)
 
     if (!engine) {
       return NextResponse.json(
@@ -118,6 +122,12 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { sessionId, action } = body
 
@@ -128,7 +138,7 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    const engine = activeSessions.get(sessionId)
+    const engine = sessionStore.get(sessionId)
 
     if (!engine) {
       return NextResponse.json(
@@ -145,7 +155,7 @@ export async function PATCH(req: NextRequest) {
         engine.resume()
         break
       case 'end':
-        activeSessions.delete(sessionId)
+        sessionStore.delete(sessionId)
         break
       default:
         return NextResponse.json(
