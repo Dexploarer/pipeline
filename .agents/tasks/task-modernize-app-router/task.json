@@ -1,0 +1,14 @@
+{
+  "task_id": "task-modernize-app-router",
+  "task_description": "Modernize the application into a 2026-ready production app by converting the single-page tab-switching architecture into proper Next.js App Router file-based routing with a persistent dashboard layout, responsive sidebar navigation, real routes for deep-linking, toast notifications, enabled fonts, and removal of hardcoded fake data.",
+  "status": "completed",
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "Type-check clean, build produces 37 static pages, all 20 tests pass. Review finding addressed: layout refactored to server component."
+  },
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

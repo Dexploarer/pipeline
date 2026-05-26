@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create all 7 CRUD API route files (14 files total) plus the search endpoint, following the createApiHandler pattern from lib/middleware/api.ts",
+  "status": "completed",
+  "steps": [
+    "Create app/api/npcs/route.ts with GET (list with pagination, filtering by zoneId/archetype/search) and POST (create with createNPCSchema validation). GET should use getNPCsByZone when zoneId param is present, otherwise getAllNPCs. POST should call createAuditLog and invalidateEntity after creation. Use rateLimit: { requests: 100, window: 60 } for GET and { requests: 30, window: 60 } for POST.",
+    "Create app/api/npcs/[id]/route.ts with GET (single NPC by ID), PUT (update with updateNPCSchema validation), DELETE. PUT and DELETE should call createAuditLog and invalidateEntity. GET should use getCachedOrFetch pattern. Access ID from ctx.params?.id (the ApiContext has params from the wrapper).",
+    "Create app/api/quests/route.ts with GET (list with pagination, filtering by zoneId/status) and POST (create with createQuestSchema validation). GET should use getQuestsByZone when zoneId is present. POST calls createAuditLog and invalidateEntity.",
+    "Create app/api/quests/[id]/route.ts with GET, PUT (updateQuestSchema), DELETE. Same pattern as NPCs - audit log, cache invalidation on mutations.",
+    "Create app/api/zones/route.ts with GET (list with pagination, filtering by type/parentZoneId) and POST (create with createZoneSchema validation). Use getAllZones and filter in-memory since no type-specific query exists.",
+    "Create app/api/zones/[id]/route.ts with GET, PUT (updateZoneSchema), DELETE. Audit log and cache invalidation on mutations.",
+    "Create app/api/lore/route.ts with GET (list with pagination, filtering by category/zoneId/tags) and POST (create with createLoreSchema). Use getLoreByZone, getLoreByCategory, or searchLoreByTags based on which filters are present.",
+    "Create app/api/lore/[id]/route.ts with GET, PUT (updateLoreSchema), DELETE. Audit log and cache invalidation on mutations.",
+    "Create app/api/relationships/route.ts with GET (list with pagination, filtering by entityId) and POST (create with createRelationshipSchema). Use getRelationshipsForEntity when entityId is present.",
+    "Create app/api/relationships/[id]/route.ts with GET, PUT (updateRelationshipSchema), DELETE. Audit log and cache invalidation on mutations.",
+    "Create app/api/dialogue-trees/route.ts with GET (list with pagination, filtering by npcId/questId) and POST (create with createDialogueTreeSchema). Use getDialogueTreesByNPC or getDialogueTreesByQuest based on filters.",
+    "Create app/api/dialogue-trees/[id]/route.ts with GET, PUT (updateDialogueTreeSchema), DELETE. Audit log and cache invalidation on mutations.",
+    "Create app/api/content-packs/route.ts with GET (list with pagination, filtering by category/status) and POST (create with createContentPackSchema). POST calls createAuditLog and invalidateEntity.",
+    "Create app/api/content-packs/[id]/route.ts with GET, PUT (updateContentPackSchema), DELETE. Audit log and cache invalidation on mutations.",
+    "Create app/api/search/route.ts with GET handler. Accept query params: q (search query), type (npc|quest|lore), limit. Use searchNPCs from lib/search/api.ts for NPC search. For other types, implement text-based fallback using the respective repo's getAll + filter."
+  ],
+  "acceptance_criteria": [
+    "All 15 route files exist and export the correct HTTP method handlers (GET, POST, PUT, DELETE as appropriate)",
+    "All routes use createApiHandler wrapper with auth: true",
+    "All write endpoints (POST, PUT, DELETE) include rate limiting with { requests: 30, window: 60 }",
+    "All read endpoints (GET) include rate limiting with { requests: 100, window: 60 }",
+    "All POST/PUT routes use the appropriate Zod validation schema",
+    "All mutation endpoints call createAuditLog with the correct action/entityType/entityId",
+    "All mutation endpoints call invalidateEntity after the operation",
+    "List endpoints support pagination via getPaginationParams",
+    "List endpoints support entity-specific filtering via query parameters",
+    "GET [id] endpoints return 404 with errorResponse when entity not found",
+    "TypeScript compiles without errors (bun run type-check passes)"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/pipeline && bun run type-check",
+    "Verify all 15 route files exist: ls app/api/npcs/route.ts app/api/npcs/\\[id\\]/route.ts app/api/quests/route.ts app/api/quests/\\[id\\]/route.ts app/api/zones/route.ts app/api/zones/\\[id\\]/route.ts app/api/lore/route.ts app/api/lore/\\[id\\]/route.ts app/api/relationships/route.ts app/api/relationships/\\[id\\]/route.ts app/api/dialogue-trees/route.ts app/api/dialogue-trees/\\[id\\]/route.ts app/api/content-packs/route.ts app/api/content-packs/\\[id\\]/route.ts app/api/search/route.ts"
+  ],
+  "blocked_reason": null,
+  "findings": "1. ctx.params uses Record<string,string> so bracket notation is required (ctx.params?.['id']) due to noUncheckedIndexedAccess. 2. Zone type uses parentRegionId not parentZoneId. 3. ContentPack metadata is Record<string,unknown>|undefined so bracket notation needed for property access. 4. Type check passes cleanly after fixes."
+}

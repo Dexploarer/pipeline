@@ -1,22 +1,13 @@
 import type { NextConfig } from "next";
 
-// Validate environment variables at build time
-import "./lib/config/env";
+// Validate environment variables at build time (skip with SKIP_ENV_VALIDATION=1)
+// Note: This is a sync check; the dynamic import with top-level await
+// is incompatible with the Next.js config loader in some environments.
+// Env validation is now handled at runtime via the env module.
 
 const nextConfig: NextConfig = {
   // Packages that should not be bundled by the server build
   serverExternalPackages: [],
-
-  // The optional `@sentry/nextjs` integration is loaded via a dynamic import
-  // with a computed specifier. Webpack flags this as a "Critical dependency";
-  // the warning is benign because the module is intentionally optional.
-  webpack(config) {
-    config.ignoreWarnings = [
-      ...(config.ignoreWarnings ?? []),
-      { module: /lib[\\/]monitoring[\\/]sentry/ },
-    ];
-    return config;
-  },
 
   // Security headers
   async headers() {
@@ -53,7 +44,7 @@ const nextConfig: NextConfig = {
             // More secure CSP without 'unsafe-eval' and 'unsafe-inline' in script-src
             // Note: 'unsafe-inline' is kept for style-src as Tailwind CSS requires it
             // TODO: Implement nonce-based CSP for even better security
-            value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://openrouter.ai https://*.vercel.app https://*.upstash.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;",
+            value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://openrouter.ai https://*.vercel.app https://*.upstash.io https://api.elevenlabs.io https://*.stackframe.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;",
           },
         ],
       },

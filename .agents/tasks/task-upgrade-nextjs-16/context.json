@@ -1,0 +1,28 @@
+{
+  "project_type": "Next.js 15 + TypeScript + React 19 + Bun application (game/content pipeline dashboard)",
+  "language": "TypeScript",
+  "build_system": "Bun (package manager) + Next.js (framework). All scripts run via bun.",
+  "test_framework": "Vitest with @testing-library/react, jsdom environment, tests in lib/__tests__/",
+  "build_command": "cd /projects/sandbox/pipeline && SKIP_ENV_VALIDATION=1 bun run build",
+  "test_command": "cd /projects/sandbox/pipeline && bun run test:run",
+  "verification_instructions": "1. bun install 2. bun run type-check 3. bun run build (with SKIP_ENV_VALIDATION=1) 4. bun run test:run",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/pipeline && bun install",
+  "environment_constraints": "OPEN_INTERNET mode - full access to registries. Bun 1.2.14 available. SKIP_ENV_VALIDATION=1 needed for build (no real DB/API keys).",
+  "contribution_requirements": "Use Bun instead of Node.js, npm, pnpm. See CLAUDE.md.",
+  "key_patterns": "Route handlers use createApiHandler wrapper from lib/middleware/api.ts. Dynamic routes ([id]) access params via ctx.params from ApiContext. The createApiHandler receives Next.js route context as second arg and extracts params. 5 dynamic route files all follow identical pattern.",
+  "relevant_files": [
+    "package.json",
+    "middleware.ts",
+    "next.config.ts",
+    "lib/middleware/api.ts",
+    "app/api/npcs/[id]/route.ts",
+    "app/api/quests/[id]/route.ts",
+    "app/api/lore/[id]/route.ts",
+    "app/api/dialogue-trees/[id]/route.ts",
+    "app/api/content-packs/[id]/route.ts",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "directory_structure": "app/ - Next.js app router (pages + API routes), lib/ - shared code (middleware, db, cache, validation, logging), .github/workflows/ - CI with bun"
+}

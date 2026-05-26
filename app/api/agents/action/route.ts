@@ -1,6 +1,8 @@
+// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.
 import { NextRequest, NextResponse } from 'next/server'
 import { GameAgentEngine } from '@/lib/agents/agent-engine'
 import type { GameState } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -15,11 +17,23 @@ if (!globalThis.agentSessions) {
   globalThis.agentSessions = activeSessions
 }
 
+function addDeprecationHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Deprecated", "true")
+  response.headers.set("X-Deprecated-Message", "Use /api/agents-v2/ instead")
+  return response
+}
+
 /**
  * Request agent to make a single decision/action
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const body = await req.json()
     const { sessionId, gameState } = body as {
       sessionId: string
@@ -27,19 +41,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (!sessionId) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Session ID is required' },
         { status: 400 }
-      )
+      ))
     }
 
     const engine = activeSessions.get(sessionId)
 
     if (!engine) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
-      )
+      ))
     }
 
     // Update game state if provided
@@ -50,10 +64,10 @@ export async function POST(req: NextRequest) {
     // Get current game state
     const currentSession = engine.getSession()
     if (!currentSession) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Invalid session state' },
         { status: 500 }
-      )
+      ))
     }
 
     // Make decision
@@ -62,20 +76,20 @@ export async function POST(req: NextRequest) {
     // Get updated session
     const updatedSession = engine.getSession()
 
-    return NextResponse.json({
+    return addDeprecationHeaders(NextResponse.json({
       success: true,
       decision,
       gameState: updatedSession?.gameState,
       totalReward: updatedSession?.totalReward,
-    })
+    }))
   } catch (error) {
     console.error('Agent action error:', error)
-    return NextResponse.json(
+    return addDeprecationHeaders(NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    ))
   }
 }

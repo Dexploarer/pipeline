@@ -101,6 +101,15 @@ export class EventDrivenAgentEngine {
   }
 
   /**
+   * Trim event log to prevent unbounded growth
+   */
+  private trimEventLog(): void {
+    if (this.state && this.state.eventLog.length > 100) {
+      this.state.eventLog = this.state.eventLog.slice(-50)
+    }
+  }
+
+  /**
    * Process a game state update (event-driven)
    */
   async processGameStateEvent(gameState: GameState): Promise<void> {
@@ -117,11 +126,7 @@ export class EventDrivenAgentEngine {
     // Log the event
     const event = this.eventLogger.logGameState(this.state.sessionId, gameState)
     this.state.eventLog.push(event)
-
-    // Keep event log manageable
-    if (this.state.eventLog.length > 100) {
-      this.state.eventLog = this.state.eventLog.slice(-50)
-    }
+    this.trimEventLog()
 
     // Emit event
     await this.emitEvent({
@@ -156,13 +161,13 @@ export class EventDrivenAgentEngine {
       const contexts = await this.providers.getAllContexts(this.state.sessionId)
 
       // 2. Select appropriate template
-      // Get the actual GameState from the provider's context XML
-      const gameStateProvider = this.providers.get('gameState')
-      const gameStateContext = gameStateProvider
-        ? await gameStateProvider.get(this.state.sessionId)
+      // Get the actual GameState from the provider's context XML (reused later in tool execution)
+      const gameStateProviderRef = this.providers.get('gameState') as GameStateProvider | undefined
+      let currentGameStateContext = gameStateProviderRef
+        ? await gameStateProviderRef.get(this.state.sessionId)
         : undefined
-      const currentGameState = gameStateContext
-        ? this.reconstructGameState(this.eventLogger.parseXML(gameStateContext.xml))
+      const currentGameState = currentGameStateContext
+        ? this.reconstructGameState(this.eventLogger.parseXML(currentGameStateContext.xml))
         : undefined
       const templateName = selectTemplate(
         currentGameState,
@@ -238,11 +243,7 @@ export class EventDrivenAgentEngine {
         // Log thought and persist to event log
         const thoughtEvent = this.eventLogger.logThought(this.state.sessionId, chunk)
         this.state.eventLog.push(thoughtEvent)
-
-        // Keep event log manageable
-        if (this.state.eventLog.length > 100) {
-          this.state.eventLog = this.state.eventLog.slice(-50)
-        }
+        this.trimEventLog()
       }
 
       // 7. Execute tool calls
@@ -261,10 +262,10 @@ export class EventDrivenAgentEngine {
           const tool = gameActionTools.find((t) => t.name === toolCall.toolName)
           if (tool) {
             try {
-              // Get current game state for tool execution
-              const gameStateProvider = this.providers.get('gameState') as GameStateProvider
-              const gameStateContext = await gameStateProvider.get(this.state.sessionId)
-              const gameStateData = this.eventLogger.parseXML(gameStateContext.xml)
+              // Get current game state for tool execution (reuse cached context)
+              const gameStateData = currentGameStateContext
+                ? this.eventLogger.parseXML(currentGameStateContext.xml)
+                : {}
               const gameState = this.reconstructGameState(gameStateData)
 
               const toolInput = toolCall.input as Record<string, unknown>
@@ -282,6 +283,7 @@ export class EventDrivenAgentEngine {
                 }
               )
               this.state.eventLog.push(actionEvent)
+              this.trimEventLog()
 
               // Log reward
               if (actionResult.reward !== undefined) {
@@ -291,11 +293,16 @@ export class EventDrivenAgentEngine {
                   actionResult.description
                 )
                 this.state.eventLog.push(rewardEvent)
+                this.trimEventLog()
               }
 
               // Update providers
               if (actionResult.success && actionResult.newState) {
                 await this.processGameStateEvent(actionResult.newState)
+                // Refresh cached game state context after state update
+                if (gameStateProviderRef) {
+                  currentGameStateContext = await gameStateProviderRef.get(this.state.sessionId)
+                }
               }
 
               const recentEventsProvider = this.providers.get('recentEvents') as RecentEventsProvider

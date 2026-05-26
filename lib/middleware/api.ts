@@ -44,8 +44,8 @@ export interface MiddlewareOptions {
 export function createApiHandler(
   handler: ApiHandler,
   options: MiddlewareOptions = {}
-): (req: NextRequest, context?: { params?: Record<string, string> }) => Promise<NextResponse> {
-  return async (req: NextRequest, context?: { params?: Record<string, string> }) => {
+): (req: NextRequest, context?: { params?: Promise<Record<string, string>> }) => Promise<NextResponse> {
+  return async (req: NextRequest, context?: { params?: Promise<Record<string, string>> }) => {
     const requestId = generateRequestId()
     const tracker = new PerformanceTracker()
     const method = req.method
@@ -55,10 +55,13 @@ export function createApiHandler(
     logger.api.request(method, url, { requestId })
 
     try {
+      // Resolve async params
+      const resolvedParams = context?.params ? await context.params : undefined
+
       // Create API context
       const apiContext: ApiContext = {
         requestId,
-        params: context?.params,
+        params: resolvedParams,
         tracker,
       }
 
@@ -66,7 +69,7 @@ export function createApiHandler(
 
       // Validation
       if (options.validation) {
-        const validationResult = await validateRequestData(req, options.validation, context?.params)
+        const validationResult = await validateRequestData(req, options.validation, resolvedParams)
         if (!validationResult.success) {
           throw validationResult.error
         }
