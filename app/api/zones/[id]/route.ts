@@ -37,6 +37,11 @@ export const PUT = createApiHandler(
       return errorResponse("ID is required", "MISSING_ID", 400)
     }
 
+    const existing = await zoneRepo.getZone(id)
+    if (!existing) {
+      return errorResponse("Zone not found", "NOT_FOUND", 404)
+    }
+
     const body = await req.json()
     const zone = await zoneRepo.updateZone(id, body)
     await createAuditLog("update", "zone", id, body)
@@ -56,6 +61,11 @@ export const DELETE = createApiHandler(
     const id = ctx.params?.["id"]
     if (!id) {
       return errorResponse("ID is required", "MISSING_ID", 400)
+    }
+
+    const existing = await zoneRepo.getZone(id)
+    if (!existing) {
+      return errorResponse("Zone not found", "NOT_FOUND", 404)
     }
 
     await zoneRepo.deleteZone(id)

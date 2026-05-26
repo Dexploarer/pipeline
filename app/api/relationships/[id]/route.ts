@@ -37,6 +37,11 @@ export const PUT = createApiHandler(
       return errorResponse("ID is required", "MISSING_ID", 400)
     }
 
+    const existing = await relationshipRepo.getRelationship(id)
+    if (!existing) {
+      return errorResponse("Relationship not found", "NOT_FOUND", 404)
+    }
+
     const body = await req.json()
     const relationship = await relationshipRepo.updateRelationship(id, body)
     await createAuditLog("update", "relationship", id, body)
@@ -56,6 +61,11 @@ export const DELETE = createApiHandler(
     const id = ctx.params?.["id"]
     if (!id) {
       return errorResponse("ID is required", "MISSING_ID", 400)
+    }
+
+    const existing = await relationshipRepo.getRelationship(id)
+    if (!existing) {
+      return errorResponse("Relationship not found", "NOT_FOUND", 404)
     }
 
     await relationshipRepo.deleteRelationship(id)

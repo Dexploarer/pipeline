@@ -309,6 +309,7 @@ describe("NPC API Routes", () => {
   describe("PUT /api/npcs/[id]", () => {
     it("updates NPC and calls audit log and cache invalidation", async () => {
       const updatedNPC = { ...mockNPCs[0], name: "Updated Warrior" }
+      vi.mocked(npcRepo.getNPC).mockResolvedValue(mockNPCs[0] as never)
       vi.mocked(npcRepo.updateNPC).mockResolvedValue(updatedNPC as never)
 
       const req = new NextRequest(
@@ -340,6 +341,7 @@ describe("NPC API Routes", () => {
 
   describe("DELETE /api/npcs/[id]", () => {
     it("deletes NPC and calls audit log and cache invalidation", async () => {
+      vi.mocked(npcRepo.getNPC).mockResolvedValue(mockNPCs[0] as never)
       vi.mocked(npcRepo.deleteNPC).mockResolvedValue(undefined as never)
 
       const req = new NextRequest(

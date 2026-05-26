@@ -25,7 +25,7 @@ export const GET = createApiHandler(
     }
 
     return errorResponse(
-      `Unsupported search type: ${type}`,
+      "Unsupported search type. Supported types: npc",
       "UNSUPPORTED_TYPE",
       400,
     )

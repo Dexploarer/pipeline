@@ -37,6 +37,11 @@ export const PUT = createApiHandler(
       return errorResponse("ID is required", "MISSING_ID", 400)
     }
 
+    const existing = await dialogueTreeRepo.getDialogueTree(id)
+    if (!existing) {
+      return errorResponse("Dialogue tree not found", "NOT_FOUND", 404)
+    }
+
     const body = await req.json()
     const tree = await dialogueTreeRepo.updateDialogueTree(id, body)
     await createAuditLog("update", "dialogue-tree", id, body)
@@ -56,6 +61,11 @@ export const DELETE = createApiHandler(
     const id = ctx.params?.["id"]
     if (!id) {
       return errorResponse("ID is required", "MISSING_ID", 400)
+    }
+
+    const existing = await dialogueTreeRepo.getDialogueTree(id)
+    if (!existing) {
+      return errorResponse("Dialogue tree not found", "NOT_FOUND", 404)
     }
 
     await dialogueTreeRepo.deleteDialogueTree(id)

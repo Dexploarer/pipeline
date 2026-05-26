@@ -303,6 +303,7 @@ describe("Zone API Routes", () => {
   describe("PUT /api/zones/[id]", () => {
     it("updates zone and calls audit log and cache invalidation", async () => {
       const updatedZone = { ...mockZones[0], name: "Updated City" }
+      vi.mocked(zoneRepo.getZone).mockResolvedValue(mockZones[0] as never)
       vi.mocked(zoneRepo.updateZone).mockResolvedValue(updatedZone as never)
 
       const req = new NextRequest(
@@ -334,6 +335,7 @@ describe("Zone API Routes", () => {
 
   describe("DELETE /api/zones/[id]", () => {
     it("deletes zone and calls audit log and cache invalidation", async () => {
+      vi.mocked(zoneRepo.getZone).mockResolvedValue(mockZones[0] as never)
       vi.mocked(zoneRepo.deleteZone).mockResolvedValue(undefined as never)
 
       const req = new NextRequest(

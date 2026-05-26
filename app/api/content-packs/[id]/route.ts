@@ -37,6 +37,11 @@ export const PUT = createApiHandler(
       return errorResponse("ID is required", "MISSING_ID", 400)
     }
 
+    const existing = await contentPackRepo.getContentPack(id)
+    if (!existing) {
+      return errorResponse("Content pack not found", "NOT_FOUND", 404)
+    }
+
     const body = await req.json()
     const pack = await contentPackRepo.updateContentPack(id, body)
     await createAuditLog("update", "content-pack", id, body)
@@ -56,6 +61,11 @@ export const DELETE = createApiHandler(
     const id = ctx.params?.["id"]
     if (!id) {
       return errorResponse("ID is required", "MISSING_ID", 400)
+    }
+
+    const existing = await contentPackRepo.getContentPack(id)
+    if (!existing) {
+      return errorResponse("Content pack not found", "NOT_FOUND", 404)
     }
 
     await contentPackRepo.deleteContentPack(id)
