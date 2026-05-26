@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Upgrade Next.js from 15.5.4 to 16 (latest) and update all related dependencies, then apply all breaking-change migrations: rename middleware.ts to proxy.ts, remove webpack config, and fix async params in createApiHandler.",
+  "status": "completed",
+  "steps": [
+    "Step 1 - Update dependencies: Run `bun add next@latest react@latest react-dom@latest` and `bun add -d @types/react@latest @types/react-dom@latest eslint-config-next@latest` in /projects/sandbox/pipeline",
+    "Step 2 - Rename middleware.ts to proxy.ts: Rename the file /projects/sandbox/pipeline/middleware.ts to /projects/sandbox/pipeline/proxy.ts. Inside the file, rename the exported function from `middleware` to `proxy`. Keep all other logic (CORS, size checking, security headers) identical. Keep the `config` export with the matcher array unchanged.",
+    "Step 3 - Remove webpack config from next.config.ts: In /projects/sandbox/pipeline/next.config.ts, remove the entire `webpack(config) { ... }` block from the nextConfig object. Keep everything else (serverExternalPackages, headers()). Remove the comment above webpack about Sentry too.",
+    "Step 4 - Fix async params in lib/middleware/api.ts: In /projects/sandbox/pipeline/lib/middleware/api.ts, update the createApiHandler function signature so the `params` in the context argument is typed as `Promise<Record<string, string>>` instead of `Record<string, string>`. Inside the function body, await `context.params` before assigning to apiContext.params. Also update the validateRequestData call to pass the resolved params. The ApiContext interface keeps `params?: Record<string, string>` unchanged (it holds the already-resolved value).",
+    "Step 5 - Verify type-check passes: Run `cd /projects/sandbox/pipeline && bun run type-check` to ensure no TypeScript errors.",
+    "Step 6 - Verify build passes: Run `cd /projects/sandbox/pipeline && SKIP_ENV_VALIDATION=1 bun run build` to ensure the Next.js 16 build succeeds with Turbopack.",
+    "Step 7 - Verify tests pass: Run `cd /projects/sandbox/pipeline && bun run test:run` to ensure existing tests still pass."
+  ],
+  "acceptance_criteria": [
+    "package.json shows next@16.x (latest stable)",
+    "middleware.ts no longer exists; proxy.ts exists with exported function named `proxy`",
+    "next.config.ts has no webpack key",
+    "lib/middleware/api.ts awaits params from the route context before using them",
+    "`bun run type-check` passes with no errors",
+    "`SKIP_ENV_VALIDATION=1 bun run build` succeeds",
+    "`bun run test:run` passes"
+  ],
+  "verification": [
+    "cd /projects/sandbox/pipeline && bun run type-check",
+    "cd /projects/sandbox/pipeline && SKIP_ENV_VALIDATION=1 bun run build",
+    "cd /projects/sandbox/pipeline && bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "Build requires UPSTASH_SEARCH_REST_URL, UPSTASH_SEARCH_REST_TOKEN, and DATABASE_URL env vars in addition to SKIP_ENV_VALIDATION=1 to complete page data collection phase (pre-existing issue, not caused by upgrade). CSS warnings about field-sizing selectors are benign. Sentry module-not-found warning is expected (optional dependency). tsconfig.json was auto-updated by Next.js 16 to include .next/dev/types/**/*.ts. Unused React imports in workflow-nodes components needed removal due to strict noUnusedLocals with react-jsx transform (no longer needs React in scope for JSX)."
+}
