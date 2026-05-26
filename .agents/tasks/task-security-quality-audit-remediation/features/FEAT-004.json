@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-004",
+  "type": "refactor",
+  "description": "Code quality and consistency improvements: v1 agent deprecation headers, redundant provider fetch fix, event log trimming dedup, generateRequestId crypto fix, CacheClient.mset pipeline, [v0] console replacement with logger, z.function() removal, Sentry startup log.",
+  "status": "completed",
+  "steps": [
+    "STEP 1 - V1 agent deprecation: Add `X-Deprecated: true` and `X-Deprecated-Message: Use /api/agents-v2/ instead` response headers to all responses in these 4 v1 route files: app/api/agents/action/route.ts, app/api/agents/create/route.ts, app/api/agents/session/route.ts, app/api/agents/stream/route.ts. Also add a comment at the top of each file: `// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.`",
+    "STEP 2 - Redundant provider fetch: In lib/agents/event-driven-engine.ts, in the decideWithStreaming method, the gameState provider is fetched twice (once for template selection around line ~160 and again inside the tool execution loop). Extract the game state provider lookup and context fetch into a single local variable at the top of decideWithStreaming and reuse it in both places.",
+    "STEP 3 - Event log trimming dedup: In lib/agents/event-driven-engine.ts, extract the repeated pattern `if (this.state.eventLog.length > 100) { this.state.eventLog = this.state.eventLog.slice(-50) }` into a private method `private trimEventLog(): void`. Call this method after every push to this.state.eventLog (in processGameStateEvent, decideWithStreaming thought logging, action logging, reward logging).",
+    "STEP 4 - generateRequestId crypto fix: In lib/logging/logger.ts, replace the implementation of generateRequestId: change `return \\`req_${Date.now()}_${Math.random().toString(36).substring(7)}\\`` to `return \\`req_${crypto.randomUUID()}\\``. The crypto global is available in Node.js 19+ and all modern runtimes including Bun.",
+    "STEP 5 - CacheClient.mset pipeline: In lib/cache/client.ts, rewrite the mset method to use Upstash Redis pipeline instead of looping. Use `const pipeline = this.getClient().pipeline()`, then for each entry call pipeline.setex(key, ttl || 3600, value) (or pipeline.set if no ttl), then `await pipeline.exec()`. The @upstash/redis client supports .pipeline().",
+    "STEP 6 - Replace [v0] console statements with structured logger: In lib/db/client.ts, lib/cache/client.ts, and lib/cache/patterns.ts, replace all console.log('[v0]...'), console.error('[v0]...'), console.warn('[v0]...') calls with the appropriate logger method from lib/logging/logger.ts. Import { logger } from '@/lib/logging/logger' (use relative paths if needed to avoid circular deps). Map: console.log -> logger.info, console.error -> logger.error, console.warn -> logger.warn. For error cases, pass the error object as the second arg to logger.error.",
+    "STEP 7 - Remove z.function() from batchGenerateNPCsSchema: In lib/validation/schemas.ts, remove the `progressCallback: z.function().optional()` field from batchGenerateNPCsSchema since z.function() cannot validate JSON input from API requests.",
+    "STEP 8 - Sentry startup log: In lib/monitoring/sentry.ts, in the initSentry function, when Sentry is not configured (no DSN or not enabled) and NODE_ENV is NOT 'development', log a warning: `console.warn('Sentry monitoring not configured in non-development environment. Set SENTRY_DSN to enable error tracking.')`"
+  ],
+  "acceptance_criteria": [
+    "V1 agent routes include X-Deprecated header in responses",
+    "No duplicate gameState provider fetch in decideWithStreaming",
+    "Event log trimming is done via a single private method",
+    "generateRequestId uses crypto.randomUUID()",
+    "CacheClient.mset uses pipeline instead of sequential awaits",
+    "No [v0] prefixed console calls remain in lib/db/client.ts, lib/cache/client.ts, lib/cache/patterns.ts",
+    "batchGenerateNPCsSchema no longer has progressCallback field",
+    "Sentry warns in non-dev environments when DSN is missing",
+    "bun run type-check passes"
+  ],
+  "verification": [
+    "bun run type-check",
+    "bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "All 8 steps implemented cleanly. Type-check, lint, and all 20 tests pass. No circular dependency issues with logger imports into cache/db modules."
+}

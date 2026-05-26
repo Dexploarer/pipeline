@@ -4,9 +4,16 @@ import { getModelForTask } from "@/lib/ai-router"
 import { buildGenerationContext, formatContextForPrompt } from "@/lib/ai/context-builder"
 import { getCachedAIGeneration, cacheAIGeneration } from "@/lib/cache/patterns"
 import { CacheTiers, generateHash } from "@/lib/cache/strategy"
+import { getUserFromRequest } from "@/lib/auth/session"
 
 export async function POST(request: Request) {
   try {
+    const authHeader = request.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { prompt, archetype, model: customModel, zoneId, relatedNpcIds } = body
 

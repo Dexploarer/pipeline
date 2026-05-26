@@ -1,6 +1,8 @@
+// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.
 import { NextRequest, NextResponse } from 'next/server'
 import { GameAgentEngine } from '@/lib/agents/agent-engine'
 import type { AgentConfig, GameState } from '@/lib/agents/types'
+import { getUserFromRequest } from '@/lib/auth/session'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -15,11 +17,23 @@ if (!globalThis.agentSessions) {
   globalThis.agentSessions = activeSessions
 }
 
+function addDeprecationHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Deprecated", "true")
+  response.headers.set("X-Deprecated-Message", "Use /api/agents-v2/ instead")
+  return response
+}
+
 /**
  * Initialize a new agent session
  */
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const body = await req.json()
     const { agentConfig, gameState } = body as {
       agentConfig: AgentConfig
@@ -27,10 +41,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!agentConfig || !gameState) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Agent config and game state are required' },
         { status: 400 }
-      )
+      ))
     }
 
     // Create agent engine
@@ -42,7 +56,7 @@ export async function POST(req: NextRequest) {
     // Store session
     activeSessions.set(session.id, engine)
 
-    return NextResponse.json({
+    return addDeprecationHeaders(NextResponse.json({
       success: true,
       session: {
         id: session.id,
@@ -50,16 +64,16 @@ export async function POST(req: NextRequest) {
         status: session.status,
         startedAt: session.startedAt,
       },
-    })
+    }))
   } catch (error) {
     console.error('Session initialization error:', error)
-    return NextResponse.json(
+    return addDeprecationHeaders(NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    ))
   }
 }
 
@@ -68,28 +82,34 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const sessionId = req.nextUrl.searchParams.get('sessionId')
 
     if (!sessionId) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Session ID is required' },
         { status: 400 }
-      )
+      ))
     }
 
     const engine = activeSessions.get(sessionId)
 
     if (!engine) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
-      )
+      ))
     }
 
     const session = engine.getSession()
     const statistics = engine.getStatistics()
 
-    return NextResponse.json({
+    return addDeprecationHeaders(NextResponse.json({
       success: true,
       session: {
         id: session?.id,
@@ -99,16 +119,16 @@ export async function GET(req: NextRequest) {
         totalReward: session?.totalReward,
         statistics,
       },
-    })
+    }))
   } catch (error) {
     console.error('Get session error:', error)
-    return NextResponse.json(
+    return addDeprecationHeaders(NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    ))
   }
 }
 
@@ -117,23 +137,29 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization")
+    const user = await getUserFromRequest(authHeader)
+    if (!user) {
+      return addDeprecationHeaders(NextResponse.json({ error: "Authentication required" }, { status: 401 }))
+    }
+
     const body = await req.json()
     const { sessionId, action } = body
 
     if (!sessionId || !action) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Session ID and action are required' },
         { status: 400 }
-      )
+      ))
     }
 
     const engine = activeSessions.get(sessionId)
 
     if (!engine) {
-      return NextResponse.json(
+      return addDeprecationHeaders(NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
-      )
+      ))
     }
 
     switch (action) {
@@ -148,25 +174,25 @@ export async function PATCH(req: NextRequest) {
         activeSessions.delete(sessionId)
         break
       default:
-        return NextResponse.json(
+        return addDeprecationHeaders(NextResponse.json(
           { error: 'Invalid action' },
           { status: 400 }
-        )
+        ))
     }
 
-    return NextResponse.json({
+    return addDeprecationHeaders(NextResponse.json({
       success: true,
       session: engine.getSession(),
-    })
+    }))
   } catch (error) {
     console.error('Update session error:', error)
-    return NextResponse.json(
+    return addDeprecationHeaders(NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
-    )
+    ))
   }
 }
 

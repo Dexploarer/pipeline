@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless"
+import { logger } from "@/lib/logging/logger"
 
 // Ensure we're on the server side
 if (typeof window !== "undefined") {
@@ -14,10 +15,9 @@ const getDatabaseUrl = (): string => {
     process.env["POSTGRES_URL_NON_POOLING"]
 
   if (!url) {
-    console.error(
-      "[v0] Available env vars:",
-      Object.keys(process.env).filter((k) => k.includes("DATABASE") || k.includes("POSTGRES")),
-    )
+    logger.error("No database connection string found", undefined, {
+      availableVars: Object.keys(process.env).filter((k) => k.includes("DATABASE") || k.includes("POSTGRES")),
+    })
     throw new Error(
       "No database connection string found. Please ensure DATABASE_URL or POSTGRES_URL is set in environment variables.",
     )
@@ -34,9 +34,9 @@ try {
   const dbUrl = getDatabaseUrl()
   sql = neon(dbUrl)
   isInitialized = true
-  console.log("[v0] Database client initialized successfully")
+  logger.info("Database client initialized successfully")
 } catch (error) {
-  console.error("[v0] Failed to initialize database client:", error)
+  logger.error("Failed to initialize database client", error instanceof Error ? error : undefined)
   // Create a mock client that throws helpful errors
   sql = ((() => {
     throw new Error("Database not configured. Please set DATABASE_URL in environment variables.")
@@ -67,7 +67,7 @@ export async function query<T = Record<string, unknown>>(text: string, params?: 
     const result = await sql(template, ...(params || []))
     return result as T[]
   } catch (error) {
-    console.error("[v0] Database query error:", error)
+    logger.error("Database query error", error instanceof Error ? error : undefined)
     throw error
   }
 }
