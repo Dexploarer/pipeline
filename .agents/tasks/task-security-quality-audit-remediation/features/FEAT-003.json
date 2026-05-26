@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "fix",
   "description": "High priority security and resilience: audit log DB implementation, dev bypass tightening, CORS origin echo fix, in-memory rate limit fallback, CSP update, XML safety comment, env.ts lazy validation, and ElevenLabs env key.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "STEP 1 - Audit log DB implementation: In lib/db/audit.ts, import { query, isDatabaseAvailable } from './client'. In createAuditLog, if isDatabaseAvailable() returns true, execute INSERT INTO audit_logs (user_id, action, entity_type, entity_id, changes, created_at) VALUES ($1, $2, $3, $4, $5, NOW()). If DB is not available, fall back to console.log with the structured logger from lib/logging/logger.ts. Also implement getAuditLogs to query the audit_logs table with entity_type and entity_id filters. Remove the throw at the end - audit failures should not crash callers.",
     "STEP 2 - Dev bypass tightening: In lib/auth/session.ts, modify the dev mode check in getCurrentUser and getUserFromRequest. Currently: `process.env['NODE_ENV'] === 'development' && process.env['VERCEL_ENV'] !== 'production'`. Change to: `process.env['NODE_ENV'] === 'development' && (!process.env['VERCEL_ENV'] || process.env['VERCEL_ENV'] === 'development')`. This ensures that if VERCEL_ENV is 'preview' or any value other than 'development', the dev bypass does NOT activate.",

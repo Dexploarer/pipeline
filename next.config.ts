@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
-// Validate environment variables at build time
-import "./lib/config/env";
+// Validate environment variables at build time (skip with SKIP_ENV_VALIDATION=1)
+if (!process.env["SKIP_ENV_VALIDATION"]) {
+  const { getEnv } = await import("./lib/config/env")
+  getEnv()
+}
 
 const nextConfig: NextConfig = {
   // Packages that should not be bundled by the server build
@@ -53,7 +56,7 @@ const nextConfig: NextConfig = {
             // More secure CSP without 'unsafe-eval' and 'unsafe-inline' in script-src
             // Note: 'unsafe-inline' is kept for style-src as Tailwind CSS requires it
             // TODO: Implement nonce-based CSP for even better security
-            value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://openrouter.ai https://*.vercel.app https://*.upstash.io; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;",
+            value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://openrouter.ai https://*.vercel.app https://*.upstash.io https://api.elevenlabs.io https://*.stackframe.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;",
           },
         ],
       },

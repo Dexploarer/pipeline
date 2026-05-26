@@ -4,7 +4,12 @@ import type { GameState } from './types'
 
 /**
  * XML Event Logger
- * Handles all event logging in XML format for agent interactions
+ * Handles all event logging in XML format for agent interactions.
+ *
+ * Security note: fast-xml-parser's XMLBuilder automatically escapes XML special
+ * characters (<, >, &, ", ') in text content nodes. This means user-provided
+ * strings passed to logThought, logObservation, etc. are safe from XML injection
+ * by default without additional sanitization.
  */
 export class XMLEventLogger {
   private xmlBuilder: XMLBuilder

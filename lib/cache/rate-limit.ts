@@ -6,6 +6,9 @@
 import { getRedisClient } from "./client"
 import { logger } from "@/lib/logging/logger"
 
+// In-memory fallback for when Redis is unavailable
+const inMemoryStore = new Map<string, { count: number; windowStart: number }>()
+
 export interface RateLimitConfig {
   requests: number // Max requests (formerly 'limit')
   window: number // Time window in seconds
@@ -48,15 +51,35 @@ export async function checkRateLimit(
   const key = `ratelimit:${identifier}`
   const now = Date.now()
 
-  // If Redis is not available, allow the request but log warning
   if (!redis) {
-    logger.warn("Rate limiting disabled - Redis not configured", { identifier })
-    return {
-      allowed: true,
-      remaining: config.requests,
-      resetAt: now + config.window * 1000,
-      limit: config.requests,
+    // In-memory fallback when Redis is unavailable
+    const record = inMemoryStore.get(key)
+    const windowMs = config.window * 1000
+
+    if (!record || now - record.windowStart > windowMs) {
+      inMemoryStore.set(key, { count: 1, windowStart: now })
+      return {
+        allowed: true,
+        remaining: config.requests - 1,
+        resetAt: now + windowMs,
+        limit: config.requests,
+      }
     }
+
+    record.count++
+    const allowed = record.count <= config.requests
+    const remaining = Math.max(0, config.requests - record.count)
+    const resetAt = record.windowStart + windowMs
+
+    if (!allowed) {
+      logger.warn("Rate limit exceeded (in-memory fallback)", {
+        identifier,
+        count: record.count,
+        limit: config.requests,
+      })
+    }
+
+    return { allowed, remaining, resetAt, limit: config.requests }
   }
 
   try {
