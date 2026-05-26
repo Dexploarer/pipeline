@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Create proper App Router file-based routing with a shared dashboard layout featuring a persistent collapsible sidebar, top header bar, and responsive mobile navigation. Move all tab-based content into separate route pages under app/(dashboard)/.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Create app/(dashboard)/layout.tsx - a shared dashboard layout with: (a) A persistent collapsible sidebar (not hover-triggered) using the navItems from components/sidebar-nav.tsx. The sidebar should have: app logo/branding at top, navigation links with icons using next/link, collapse/expand toggle button, active state highlighting via usePathname() from next/navigation. (b) A top header bar with: breadcrumb showing current section, ThemeToggle component, version badge. (c) Responsive design: on mobile (< md breakpoint), sidebar becomes a hamburger menu sheet/drawer using shadcn Dialog or a custom overlay. Use 'use client' since it needs usePathname and useState.",
     "Step 2: Create a new components/dashboard-sidebar.tsx component for the sidebar logic. Map the navItems to routes: workflows -> /workflows, ai-agents -> /agents, generator -> /generator, quest-builder -> /quests, lore -> /lore, relationships -> /relationships, flow -> /quests/flow, dialogue -> /dialogue, context -> /tools, simulator -> /simulator, library -> /library, analytics -> /analytics, world-map -> /world. Use next/link for navigation. Use usePathname() to determine active state. Include a collapse toggle that stores state (collapsed shows only icons, expanded shows icons + labels).",
@@ -42,5 +42,5 @@
     "Run: bun run test:run"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Fixed pre-existing build error: next.config.ts had a top-level await for env validation that was incompatible with Next.js 15.5.4 config loader (ERR_REQUIRE_ASYNC_MODULE). Removed the top-level await and added a comment noting env validation is handled at runtime. The app/page.tsx and app/agents/page.tsx were removed (not redirected) because the (dashboard) route group makes those paths served directly by app/(dashboard)/page.tsx and app/(dashboard)/agents/page.tsx. CSS warnings about field-sizing selectors are pre-existing and cosmetic only."
 }
