@@ -1,0 +1,7 @@
+{
+  "task_id": "task-complete-crud-api",
+  "task_description": "Build a complete RESTful CRUD API layer for all entity types (NPCs, Quests, Zones, Lore, Relationships, Dialogue Trees, Content Packs) plus a search endpoint. Uses existing createApiHandler middleware, Zod validation schemas, DB repositories, audit logging, and cache invalidation patterns.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
