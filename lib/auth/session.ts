@@ -75,7 +75,7 @@ function getDevUser(): User {
  */
 export async function getCurrentUser(): Promise<User | null> {
   // Development mode: return mock user (only in non-production environments)
-  if (process.env["NODE_ENV"] === "development" && process.env["VERCEL_ENV"] !== "production") {
+  if (process.env["NODE_ENV"] === "development" && (!process.env["VERCEL_ENV"] || process.env["VERCEL_ENV"] === "development")) {
     return getDevUser()
   }
 
@@ -134,7 +134,7 @@ export async function getUserFromRequest(authHeader: string | null): Promise<Use
   }
 
   // Development mode: accept any Bearer token (only in non-production environments)
-  if (process.env["NODE_ENV"] === "development" && process.env["VERCEL_ENV"] !== "production") {
+  if (process.env["NODE_ENV"] === "development" && (!process.env["VERCEL_ENV"] || process.env["VERCEL_ENV"] === "development")) {
     if (authHeader.startsWith("Bearer ")) {
       return getDevUser()
     }
