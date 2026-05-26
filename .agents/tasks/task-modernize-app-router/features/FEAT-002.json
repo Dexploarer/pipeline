@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Add responsive design polish, loading states, toast notifications integration in key components, and remove hardcoded analytics. Ensure mobile-friendly sidebar behavior and proper empty states.",
+  "status": "completed",
+  "steps": [
+    "Step 1: In the dashboard sidebar component (components/dashboard-sidebar.tsx), ensure responsive behavior: on screens < 768px (md), the sidebar should be hidden by default and toggled via a hamburger button in the header. Use a sheet/overlay pattern. On desktop, sidebar is always visible but can be collapsed to icon-only mode.",
+    "Step 2: Create app/(dashboard)/analytics/page.tsx - Replace the hardcoded analytics (247 NPCs, 87ms, 4.7/5) with a proper page that: (a) calls /api/health to get real system data, (b) shows actual stats from the health endpoint response (status, uptime if available), (c) for stats that have no real data source, show empty states with messaging like 'No data yet - generate some NPCs to see stats here' instead of fake numbers.",
+    "Step 3: Add a few more route pages that were in the original sidebar: app/(dashboard)/simulator/page.tsx (renders NPCSimulator), app/(dashboard)/library/page.tsx (renders ScriptLibrary), app/(dashboard)/tools/page.tsx (renders ContextInjector, BatchProcessor, VersionControl, ExportManager, ValidationSuite in a grid layout).",
+    "Step 4: Ensure all page components that load lazy content use the existing LoadingSkeleton as their Suspense fallback and ErrorBoundary wrapper pattern consistently.",
+    "Step 5: Add a simple toast notification example: in the agents page, after successfully creating an agent show toast('Agent created successfully'). Import toast from 'sonner'. In the dashboard home, if /api/health call fails, show toast.error('Could not reach server')."
+  ],
+  "acceptance_criteria": [
+    "bun run type-check passes with no errors",
+    "bun run build completes successfully",
+    "bun run test:run passes all existing tests",
+    "Analytics page shows real health data or proper empty states instead of hardcoded numbers",
+    "All remaining pages (simulator, library, tools, analytics) exist under app/(dashboard)/",
+    "Toast notifications are used in at least one user-facing interaction (agent creation)",
+    "Sidebar is responsive - uses sheet/overlay pattern on mobile"
+  ],
+  "verification": [
+    "Run: bun run type-check",
+    "Run: bun run build",
+    "Run: bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": "Sidebar responsive behavior was already implemented in FEAT-001 with hamburger button and overlay on mobile plus collapsible icon-only mode on desktop. No Sheet component exists in the project but the custom overlay pattern achieves the same result. Simulator and Library pages were also already created in FEAT-001 with proper Suspense/ErrorBoundary patterns. The project uses both sonner directly and a @/hooks/use-toast wrapper; used direct sonner import consistent with newer pages (npc-generator). Database log errors during build are expected (no DATABASE_URL in CI/build env) and do not affect the build outcome."
+}
