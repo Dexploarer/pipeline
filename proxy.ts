@@ -34,7 +34,7 @@ function isAllowedOrigin(origin: string | null): boolean {
 // Middleware
 // ============================================================================
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const origin = request.headers.get("origin")
 

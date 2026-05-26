@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'

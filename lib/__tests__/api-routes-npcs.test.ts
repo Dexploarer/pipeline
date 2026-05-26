@@ -5,11 +5,12 @@ import { NextRequest, NextResponse } from "next/server"
 vi.mock("@/lib/middleware/api", () => {
   return {
     createApiHandler: (handler: Function) => {
-      return async (req: Request, context?: { params?: Record<string, string> }) => {
+      return async (req: Request, context?: { params?: Promise<Record<string, string>> }) => {
+        const resolvedParams = context?.params ? await context.params : undefined
         const apiContext = {
           requestId: "test-req-id",
           userId: "test-user",
-          params: context?.params,
+          params: resolvedParams,
           tracker: { checkpoint: () => {}, getDuration: () => 10 },
         }
         return handler(req, apiContext)
@@ -276,7 +277,7 @@ describe("NPC API Routes", () => {
         },
       )
 
-      const response = await GET_BY_ID(req, { params: { id: "npc-test-1" } })
+      const response = await GET_BY_ID(req, { params: Promise.resolve({ id: "npc-test-1" }) })
       const data = await response.json()
 
       expect(data.success).toBe(true)
@@ -296,7 +297,7 @@ describe("NPC API Routes", () => {
       )
 
       const response = await GET_BY_ID(req, {
-        params: { id: "nonexistent-id" },
+        params: Promise.resolve({ id: "nonexistent-id" }),
       })
       const data = await response.json()
 
@@ -324,7 +325,7 @@ describe("NPC API Routes", () => {
         },
       )
 
-      const response = await PUT(req, { params: { id: "npc-test-1" } })
+      const response = await PUT(req, { params: Promise.resolve({ id: "npc-test-1" }) })
       const data = await response.json()
 
       expect(data.success).toBe(true)
@@ -352,7 +353,7 @@ describe("NPC API Routes", () => {
         },
       )
 
-      const response = await DELETE(req, { params: { id: "npc-test-1" } })
+      const response = await DELETE(req, { params: Promise.resolve({ id: "npc-test-1" }) })
       const data = await response.json()
 
       expect(data.success).toBe(true)
