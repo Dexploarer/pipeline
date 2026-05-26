@@ -1,0 +1,21 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Testing and CI/CD: Create GitHub Actions CI workflow and a health check endpoint.",
+  "status": "pending",
+  "steps": [
+    "STEP 1 - Health check endpoint: Create app/api/health/route.ts that exports a GET handler. It should return JSON: { status: 'ok', timestamp: new Date().toISOString(), version: process.env.npm_package_version || '0.1.0', checks: { database: boolean, cache: boolean } }. For database, call isDatabaseAvailable() from lib/db/client.ts. For cache, check if getRedisClient() from lib/cache/client.ts returns non-null. Use a try/catch to handle any errors gracefully and still return a response (with status: 'degraded' if checks fail).",
+    "STEP 2 - GitHub Actions CI workflow: Create .github/workflows/ci.yml that triggers on push to main and pull_request. Jobs: one job 'ci' running on ubuntu-latest with steps: checkout, setup Bun (oven-sh/setup-bun@v2), bun install, bun run type-check, bun run lint, bun run test:run. Set SKIP_ENV_VALIDATION=1 in the env for the type-check and build steps."
+  ],
+  "acceptance_criteria": [
+    "GET /api/health returns JSON with status, timestamp, and checks fields",
+    ".github/workflows/ci.yml exists and is valid YAML with correct steps",
+    "bun run type-check passes"
+  ],
+  "verification": [
+    "bun run type-check",
+    "bun run test:run"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
