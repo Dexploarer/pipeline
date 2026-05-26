@@ -7,7 +7,7 @@ import { getRedisClient } from "./client"
 import { logger } from "@/lib/logging/logger"
 
 // In-memory fallback for when Redis is unavailable
-const inMemoryStore = new Map<string, { count: number; windowStart: number }>()
+const inMemoryStore = new Map<string, { count: number; windowStart: number; windowMs: number }>()
 let inMemoryCallCount = 0
 
 export interface RateLimitConfig {
@@ -62,14 +62,14 @@ export async function checkRateLimit(
     if (inMemoryCallCount >= 100 || inMemoryStore.size > 1000) {
       inMemoryCallCount = 0
       for (const [entryKey, entry] of inMemoryStore) {
-        if (now - entry.windowStart > windowMs) {
+        if (now - entry.windowStart > entry.windowMs) {
           inMemoryStore.delete(entryKey)
         }
       }
     }
 
     if (!record || now - record.windowStart > windowMs) {
-      inMemoryStore.set(key, { count: 1, windowStart: now })
+      inMemoryStore.set(key, { count: 1, windowStart: now, windowMs: windowMs })
       return {
         allowed: true,
         remaining: config.requests - 1,

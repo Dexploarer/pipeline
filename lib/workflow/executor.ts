@@ -21,14 +21,18 @@ function getApiBaseUrl(): string {
  * This is the bridge between React Flow visualization and Workflow DevKit execution
  */
 export class WorkflowExecutor {
+  private authToken?: string
+
   /**
    * Execute a workflow defined by nodes and edges
    */
   async execute(
     nodes: Node[],
     edges: Edge[],
-    input: Record<string, unknown>
+    input: Record<string, unknown>,
+    authToken?: string
   ): Promise<WorkflowExecutionState> {
+    this.authToken = authToken
     const executionId = this.generateExecutionId()
     const context: WorkflowContext = {
       executionId,
@@ -182,7 +186,10 @@ export class WorkflowExecutor {
     // Call the AI generation API
     const response = await fetch(`${getApiBaseUrl()}/api/workflow/ai-generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
       body: JSON.stringify({
         model: config.model,
         prompt: config.prompt,
@@ -205,7 +212,10 @@ export class WorkflowExecutor {
     // Call the voice configuration API
     const response = await fetch(`${getApiBaseUrl()}/api/workflow/voice-config`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
       body: JSON.stringify({
         voiceConfig: config,
         npcData: context.results,
@@ -225,7 +235,10 @@ export class WorkflowExecutor {
     // Call the export API
     const response = await fetch(`${getApiBaseUrl()}/api/workflow/export`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
       body: JSON.stringify({
         exportConfig: config,
         workflowResults: context.results,
