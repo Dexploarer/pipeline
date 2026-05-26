@@ -1,3 +1,4 @@
+// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.
 import { NextRequest } from 'next/server'
 import { GameAgentEngine } from '@/lib/agents/agent-engine'
 import type { GameState } from '@/lib/agents/types'
@@ -98,6 +99,8 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'X-Deprecated': 'true',
+        'X-Deprecated-Message': 'Use /api/agents-v2/ instead',
       },
     })
   } catch (error) {

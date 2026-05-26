@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "refactor",
   "description": "Code quality and consistency improvements: v1 agent deprecation headers, redundant provider fetch fix, event log trimming dedup, generateRequestId crypto fix, CacheClient.mset pipeline, [v0] console replacement with logger, z.function() removal, Sentry startup log.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "STEP 1 - V1 agent deprecation: Add `X-Deprecated: true` and `X-Deprecated-Message: Use /api/agents-v2/ instead` response headers to all responses in these 4 v1 route files: app/api/agents/action/route.ts, app/api/agents/create/route.ts, app/api/agents/session/route.ts, app/api/agents/stream/route.ts. Also add a comment at the top of each file: `// @deprecated - Use /api/agents-v2/ endpoints instead. This route will be removed in a future version.`",
     "STEP 2 - Redundant provider fetch: In lib/agents/event-driven-engine.ts, in the decideWithStreaming method, the gameState provider is fetched twice (once for template selection around line ~160 and again inside the tool execution loop). Extract the game state provider lookup and context fetch into a single local variable at the top of decideWithStreaming and reuse it in both places.",
@@ -29,5 +29,5 @@
     "bun run test:run"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 8 steps implemented cleanly. Type-check, lint, and all 20 tests pass. No circular dependency issues with logger imports into cache/db modules."
 }
